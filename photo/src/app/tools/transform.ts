@@ -62,7 +62,8 @@ export function shiftedLayer(l: Layer, dx: number, dy: number): Layer {
   if ('raster' in out) out = { ...out, raster: out.raster.shifted(dx, dy) } as Layer;
   if (out.mask && out.mask.linked) out = { ...out, mask: { ...out.mask, raster: out.mask.raster.shifted(dx, dy) } };
   if (out.vmask) out = { ...out, vmask: { ...out.vmask, path: transformPath(out.vmask.path, m) } };
-  if (out.kind === 'text') out = { ...out, text: { ...out.text, x: out.text.x + dx, y: out.text.y + dy, path: out.text.path ? transformPath(out.text.path, m) : undefined } };
+  if (out.kind === 'text')
+    out = { ...out, text: { ...out.text, x: out.text.x + dx, y: out.text.y + dy, path: out.text.path ? transformPath(out.text.path, m) : undefined } };
   if (out.kind === 'shape') out = { ...out, path: transformPath(out.path, m) };
   if (out.kind === 'smart') {
     const T = out.transform;
@@ -160,7 +161,15 @@ export const moveTool: Tool = {
     if (fl) {
       s.overrides = { ...s.overrides, rasters: new Map([[fl.layerId, fl.base]]) };
       // The floating pixels show through the layer's own slot: base + moved float, drawn on the GPU as two passes is not possible, so a temporary layer carries them.
-      s.doc = { ...s.doc, layers: insertLayers(s.doc.layers, [{ ...findLayer(s.doc.layers, fl.layerId)!, id: fl.floatId, name: 'Floating', raster: fl.float, mask: undefined, styles: undefined } as Layer], fl.layerId, 'above') };
+      s.doc = {
+        ...s.doc,
+        layers: insertLayers(
+          s.doc.layers,
+          [{ ...findLayer(s.doc.layers, fl.layerId)!, id: fl.floatId, name: 'Floating', raster: fl.float, mask: undefined, styles: undefined } as Layer],
+          fl.layerId,
+          'above',
+        ),
+      };
     }
   },
   move: (e) => {
@@ -189,7 +198,8 @@ export const moveTool: Tool = {
     if (fl) {
       // Put the moved pixels down on the layer (and move the selection with them).
       const docBefore = { ...s.doc, layers: s.doc.layers.filter((x) => x.id !== fl.floatId) };
-      const removeFloat = (layers: Layer[]): Layer[] => layers.filter((x) => x.id !== fl.floatId).map((x) => (x.kind === 'group' ? { ...x, children: removeFloat(x.children) } : x));
+      const removeFloat = (layers: Layer[]): Layer[] =>
+        layers.filter((x) => x.id !== fl.floatId).map((x) => (x.kind === 'group' ? { ...x, children: removeFloat(x.children) } : x));
       s.doc = { ...s.doc, layers: removeFloat(s.doc.layers) };
       if (!dx && !dy) {
         bump();
@@ -272,7 +282,17 @@ export function freeTransform(mode: 'free' | 'warp' | 'selection' = 'free'): voi
   if (mode === 'selection') {
     const b = s.doc.selection?.bounds;
     if (!b) return;
-    xs = { target: 'selection', ids: [], src: b, quad: rectQuad(b), start: rectQuad(b), warp: null, pivot: [b.x + b.w / 2, b.y + b.h / 2], drag: null, proxy: null };
+    xs = {
+      target: 'selection',
+      ids: [],
+      src: b,
+      quad: rectQuad(b),
+      start: rectQuad(b),
+      warp: null,
+      pivot: [b.x + b.w / 2, b.y + b.h / 2],
+      drag: null,
+      proxy: null,
+    };
     requestFrame();
     return;
   }
@@ -293,7 +313,15 @@ export function freeTransform(mode: 'free' | 'warp' | 'selection' = 'free'): voi
         ys0 = pts.map((p) => p[1]);
       b = { x: Math.min(...xs0), y: Math.min(...ys0), w: Math.max(...xs0) - Math.min(...xs0), h: Math.max(...ys0) - Math.min(...ys0) };
     } else if ('raster' in l) b = l.raster.contentBounds();
-    if (b) r = r ? { x: Math.min(r.x, b.x), y: Math.min(r.y, b.y), w: Math.max(r.x + r.w, b.x + b.w) - Math.min(r.x, b.x), h: Math.max(r.y + r.h, b.y + b.h) - Math.min(r.y, b.y) } : b;
+    if (b)
+      r = r
+        ? {
+            x: Math.min(r.x, b.x),
+            y: Math.min(r.y, b.y),
+            w: Math.max(r.x + r.w, b.x + b.w) - Math.min(r.x, b.x),
+            h: Math.max(r.y + r.h, b.y + b.h) - Math.min(r.y, b.y),
+          }
+        : b;
   }
   if (!r) {
     toast('The layer is empty.');
@@ -310,7 +338,17 @@ export function freeTransform(mode: 'free' | 'warp' | 'selection' = 'free'): voi
     quad = [...mapPoint(T, 0, 0), ...mapPoint(T, W, 0), ...mapPoint(T, W, H), ...mapPoint(T, 0, H)] as Quad;
     src = { x: 0, y: 0, w: W, h: H };
   }
-  xs = { target: 'layers', ids, src, quad, start: [...quad] as Quad, warp: null, pivot: [(quad[0] + quad[4]) / 2, (quad[1] + quad[5]) / 2], drag: null, proxy: null };
+  xs = {
+    target: 'layers',
+    ids,
+    src,
+    quad,
+    start: [...quad] as Quad,
+    warp: null,
+    pivot: [(quad[0] + quad[4]) / 2, (quad[1] + quad[5]) / 2],
+    drag: null,
+    proxy: null,
+  };
   if (mode === 'warp') startWarp();
   preview();
   bump();
@@ -372,11 +410,23 @@ function preview(): void {
       const scale = Math.min(1, 1600 / Math.max(xs.src.w, xs.src.h));
       const img = { w: xs.src.w, h: xs.src.h, c: 4 as const, data: srcR.read(xs.src) };
       const small = scale < 1 ? resize(img, Math.max(1, Math.round(img.w * scale)), Math.max(1, Math.round(img.h * scale)), 'bilinear') : img;
-      const mesh = patchMesh(xs.warp.map((v) => v * scale), 24);
-      const { rect, data } = warpMesh(small, 25, 25, mesh, { x: -s.doc.width * scale, y: -s.doc.height * scale, w: s.doc.width * 3 * scale, h: s.doc.height * 3 * scale });
+      const mesh = patchMesh(
+        xs.warp.map((v) => v * scale),
+        24,
+      );
+      const { rect, data } = warpMesh(small, 25, 25, mesh, {
+        x: -s.doc.width * scale,
+        y: -s.doc.height * scale,
+        w: s.doc.width * 3 * scale,
+        h: s.doc.height * 3 * scale,
+      });
       if (!rect) continue;
       const r = Raster.fromFloats(s.doc.depth, 4, rect, data);
-      map.set(id, { inv: [scale, 0, 0, 0, scale, 0, 0, 0, 1], raster: r, bounds: { x: rect.x / scale, y: rect.y / scale, w: rect.w / scale, h: rect.h / scale } });
+      map.set(id, {
+        inv: [scale, 0, 0, 0, scale, 0, 0, 0, 1],
+        raster: r,
+        bounds: { x: rect.x / scale, y: rect.y / scale, w: rect.w / scale, h: rect.h / scale },
+      });
     }
   } else {
     const inv = invMatrix();
@@ -394,7 +444,6 @@ function preview(): void {
   s.overrides = { ...s.overrides, transforms: map };
   requestFrame();
 }
-
 
 function handles(q: Quad): [number, number][] {
   return [
@@ -454,7 +503,16 @@ export const transformTool: Tool = {
   down: (e) => {
     if (!xs) return;
     const h = hit(e);
-    xs.drag = { kind: h.kind, index: h.index, x0: e.x, y0: e.y, quad: [...xs.quad] as Quad, warp: xs.warp ? [...xs.warp] : null, pivot: [...xs.pivot] as [number, number], angle0: Math.atan2(e.y - xs.pivot[1], e.x - xs.pivot[0]) };
+    xs.drag = {
+      kind: h.kind,
+      index: h.index,
+      x0: e.x,
+      y0: e.y,
+      quad: [...xs.quad] as Quad,
+      warp: xs.warp ? [...xs.warp] : null,
+      pivot: [...xs.pivot] as [number, number],
+      angle0: Math.atan2(e.y - xs.pivot[1], e.x - xs.pivot[0]),
+    };
   },
   move: (e) => {
     if (!xs || !xs.drag) return;
@@ -745,7 +803,21 @@ export async function commitTransform(): Promise<void> {
       const k = Math.hypot(M[0]!, M[3]!);
       const ang = (Math.atan2(M[3]!, M[0]!) * 180) / Math.PI;
       const [nx, ny] = mapPoint(M, l.text.x, l.text.y);
-      out = rerenderSync({ ...l, text: { ...l.text, x: nx, y: ny, rotation: l.text.rotation + ang, base: { ...l.text.base, size: l.text.base.size * k }, runs: l.text.runs.map((r) => ({ ...r, style: r.style?.size ? { ...r.style, size: r.style.size * k } : r.style })), box: l.text.box ? { w: l.text.box.w * k, h: l.text.box.h * k } : undefined } }, s.doc);
+      out = rerenderSync(
+        {
+          ...l,
+          text: {
+            ...l.text,
+            x: nx,
+            y: ny,
+            rotation: l.text.rotation + ang,
+            base: { ...l.text.base, size: l.text.base.size * k },
+            runs: l.text.runs.map((r) => ({ ...r, style: r.style?.size ? { ...r.style, size: r.style.size * k } : r.style })),
+            box: l.text.box ? { w: l.text.box.w * k, h: l.text.box.h * k } : undefined,
+          },
+        },
+        s.doc,
+      );
     } else if ('raster' in l) {
       if (l.kind === 'text') toast('Text was turned into pixels to distort it.');
       const srcR = l.kind === 'smart' ? l.source.raster : l.raster;
@@ -753,7 +825,7 @@ export async function commitTransform(): Promise<void> {
       const res = x.warp ? warpMesh(img, 33, 33, patchMesh(x.warp, 32), clip) : warpProjective(img, M!, clip, 'bicubic');
       if (!res.rect) continue;
       const r = Raster.fromFloats(s.doc.depth, 4, res.rect, res.data);
-      out = l.kind === 'smart' ? { ...l, kind: 'pixel', raster: r } as unknown as Layer : ({ ...l, kind: 'pixel', raster: r } as Layer);
+      out = l.kind === 'smart' ? ({ ...l, kind: 'pixel', raster: r } as unknown as Layer) : ({ ...l, kind: 'pixel', raster: r } as Layer);
       if (out.mask?.linked && M && !x.warp) {
         const mimg = { w: x.src.w, h: x.src.h, c: 4 as const, data: maskAsRgba(out.mask.raster.read(x.src, undefined, out.mask.background)) };
         const mr = warpProjective(mimg, M, clip);

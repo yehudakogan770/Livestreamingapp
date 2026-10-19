@@ -201,7 +201,11 @@ function drawLayer(doc: Doc, l: Layer, dst: Float32Array, r: Rect, opts: Composi
       }
       // The adjusted backdrop mixed in with the layer's mode, opacity and mask (alpha unchanged).
       if (blend !== 'normal') {
-        const B = blendRGB(blend, [Math.min(1, Math.max(0, dst[o]!)), Math.min(1, Math.max(0, dst[o + 1]!)), Math.min(1, Math.max(0, dst[o + 2]!))], [a0, a1, a2]);
+        const B = blendRGB(
+          blend,
+          [Math.min(1, Math.max(0, dst[o]!)), Math.min(1, Math.max(0, dst[o + 1]!)), Math.min(1, Math.max(0, dst[o + 2]!))],
+          [a0, a1, a2],
+        );
         a0 = B[0]!;
         a1 = B[1]!;
         a2 = B[2]!;

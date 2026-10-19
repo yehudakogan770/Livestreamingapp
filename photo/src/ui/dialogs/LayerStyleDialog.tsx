@@ -22,7 +22,21 @@ const FIELDS: Record<StyleKey, string[]> = {
   innerShadow: ['blend', 'color', 'opacity', 'angle', 'distance', 'spread', 'size'],
   outerGlow: ['blend', 'color', 'opacity', 'spread', 'size'],
   innerGlow: ['blend', 'color', 'opacity', 'source', 'spread', 'size'],
-  bevel: ['style', 'direction', 'depth', 'size', 'soften', 'angle', 'altitude', 'highlightBlend', 'highlightColor', 'highlightOpacity', 'shadowBlend', 'shadowColor', 'shadowOpacity'],
+  bevel: [
+    'style',
+    'direction',
+    'depth',
+    'size',
+    'soften',
+    'angle',
+    'altitude',
+    'highlightBlend',
+    'highlightColor',
+    'highlightOpacity',
+    'shadowBlend',
+    'shadowColor',
+    'shadowOpacity',
+  ],
   satin: ['blend', 'color', 'opacity', 'angle', 'distance', 'size', 'invert'],
   colorOverlay: ['blend', 'color', 'opacity'],
   gradientOverlay: ['blend', 'opacity', 'gradient', 'reverse', 'style', 'angle', 'scale'],
@@ -110,7 +124,8 @@ export function LayerStyleDialog({ onClose, tab }: { onClose: () => void; tab?: 
     if (!fx) return null;
     const v = fx[k];
     const label = LABEL[k] ?? k;
-    if (k === 'blend' || k === 'highlightBlend' || k === 'shadowBlend') return <Select key={k} label={label} value={v as BlendMode} options={BLENDS} onChange={(x) => setFx(k, x)} />;
+    if (k === 'blend' || k === 'highlightBlend' || k === 'shadowBlend')
+      return <Select key={k} label={label} value={v as BlendMode} options={BLENDS} onChange={(x) => setFx(k, x)} />;
     if (k.toLowerCase().endsWith('color'))
       return (
         <div key={k} className="lp-panel-row">
@@ -118,14 +133,31 @@ export function LayerStyleDialog({ onClose, tab }: { onClose: () => void; tab?: 
           <ColorWell color={v as number[]} title={label} onClick={() => setPicker({ key: k })} />
         </div>
       );
-    if (k.toLowerCase().endsWith('opacity')) return <Slider key={k} label={label} value={v as number} min={0} max={1} step={0.01} scale={100} suffix="%" onChange={(x) => setFx(k, x)} />;
+    if (k.toLowerCase().endsWith('opacity'))
+      return <Slider key={k} label={label} value={v as number} min={0} max={1} step={0.01} scale={100} suffix="%" onChange={(x) => setFx(k, x)} />;
     if (k === 'angle') return <Slider key={k} label={label} value={v as number} min={-180} max={180} suffix="°" onChange={(x) => setFx(k, x)} />;
     if (k === 'altitude') return <Slider key={k} label={label} value={v as number} min={0} max={90} suffix="°" onChange={(x) => setFx(k, x)} />;
-    if (k === 'distance' || k === 'size') return <Slider key={k} label={label} value={v as number} min={0} max={250} suffix="px" onChange={(x) => setFx(k, x)} />;
+    if (k === 'distance' || k === 'size')
+      return <Slider key={k} label={label} value={v as number} min={0} max={250} suffix="px" onChange={(x) => setFx(k, x)} />;
     if (k === 'soften') return <Slider key={k} label={label} value={v as number} min={0} max={16} suffix="px" onChange={(x) => setFx(k, x)} />;
-    if (k === 'spread') return <Slider key={k} label={sel === 'innerShadow' || sel === 'innerGlow' ? 'Choke' : label} value={v as number} min={0} max={1} step={0.01} scale={100} suffix="%" onChange={(x) => setFx(k, x)} />;
-    if (k === 'depth') return <Slider key={k} label={label} value={v as number} min={0.01} max={10} step={0.01} scale={100} suffix="%" onChange={(x) => setFx(k, x)} />;
-    if (k === 'scale') return <Slider key={k} label={label} value={v as number} min={0.1} max={10} step={0.01} scale={100} suffix="%" onChange={(x) => setFx(k, x)} />;
+    if (k === 'spread')
+      return (
+        <Slider
+          key={k}
+          label={sel === 'innerShadow' || sel === 'innerGlow' ? 'Choke' : label}
+          value={v as number}
+          min={0}
+          max={1}
+          step={0.01}
+          scale={100}
+          suffix="%"
+          onChange={(x) => setFx(k, x)}
+        />
+      );
+    if (k === 'depth')
+      return <Slider key={k} label={label} value={v as number} min={0.01} max={10} step={0.01} scale={100} suffix="%" onChange={(x) => setFx(k, x)} />;
+    if (k === 'scale')
+      return <Slider key={k} label={label} value={v as number} min={0.1} max={10} step={0.01} scale={100} suffix="%" onChange={(x) => setFx(k, x)} />;
     if (k === 'knockout' || k === 'invert' || k === 'reverse')
       return (
         <div key={k} className="lp-panel-row">
@@ -203,12 +235,26 @@ export function LayerStyleDialog({ onClose, tab }: { onClose: () => void; tab?: 
           onChange={(x) => setFx(k, x)}
         />
       );
-    if (k === 'pattern') return <Select key={k} label={label} value={v as string} options={allPatterns().map((p) => [p.id, p.name] as [string, string])} onChange={(x) => setFx(k, x)} />;
+    if (k === 'pattern')
+      return (
+        <Select
+          key={k}
+          label={label}
+          value={v as string}
+          options={allPatterns().map((p) => [p.id, p.name] as [string, string])}
+          onChange={(x) => setFx(k, x)}
+        />
+      );
     if (k === 'gradient')
       return (
         <div key={k} className="lp-panel-row">
           <span className="lp-label">{label}</span>
-          <button className="lp-gradient-bar" style={{ flex: 1, background: gradientCss(v as Gradient, !!fx.reverse) }} aria-label="Edit the gradient" onClick={() => setGradEdit(true)} />
+          <button
+            className="lp-gradient-bar"
+            style={{ flex: 1, background: gradientCss(v as Gradient, !!fx.reverse) }}
+            aria-label="Edit the gradient"
+            onClick={() => setGradEdit(true)}
+          />
         </div>
       );
     return null;
@@ -223,7 +269,13 @@ export function LayerStyleDialog({ onClose, tab }: { onClose: () => void; tab?: 
           </button>
           {[...STYLE_ORDER].map((k) => (
             <div key={k} style={{ display: 'flex', alignItems: 'center' }}>
-              <input type="checkbox" style={{ marginLeft: 8 }} checked={!!styles[k]?.on} onChange={(e) => toggle(k, e.target.checked)} aria-label={`Use ${STYLE_NAMES[k]}`} />
+              <input
+                type="checkbox"
+                style={{ marginLeft: 8 }}
+                checked={!!styles[k]?.on}
+                onChange={(e) => toggle(k, e.target.checked)}
+                aria-label={`Use ${STYLE_NAMES[k]}`}
+              />
               <button aria-pressed={sel === k} onClick={() => setSel(k)} style={{ flex: 1 }}>
                 {STYLE_NAMES[k]}
               </button>
@@ -256,8 +308,15 @@ export function LayerStyleDialog({ onClose, tab }: { onClose: () => void; tab?: 
           )}
         </div>
       </div>
-      {picker && fx && <ColorPickerDialog p={{ color: fx[picker.key] as number[], onPick: (c: [number, number, number]) => setFx(picker.key, c) }} onClose={() => setPicker(null)} />}
-      {gradEdit && fx && <GradientEditorDialog p={{ gradient: fx.gradient, onPick: (g: Gradient) => setFx('gradient', g) }} onClose={() => setGradEdit(false)} />}
+      {picker && fx && (
+        <ColorPickerDialog
+          p={{ color: fx[picker.key] as number[], onPick: (c: [number, number, number]) => setFx(picker.key, c) }}
+          onClose={() => setPicker(null)}
+        />
+      )}
+      {gradEdit && fx && (
+        <GradientEditorDialog p={{ gradient: fx.gradient, onPick: (g: Gradient) => setFx('gradient', g) }} onClose={() => setGradEdit(false)} />
+      )}
     </Dialog>
   );
 }

@@ -14,7 +14,14 @@ import type { Mask } from '../../core/selection';
 import type { Rect } from '../../core/types';
 
 /** Fill `hole` (document mask) on a raster from its surroundings. Returns the tile swap. */
-export async function inpaintRaster(r: Raster, hole: Mask, docW: number, docH: number, sampleAll: Float32Array | null = null, margin?: number): Promise<ReturnType<TileEdit['commit']> | null> {
+export async function inpaintRaster(
+  r: Raster,
+  hole: Mask,
+  docW: number,
+  docH: number,
+  sampleAll: Float32Array | null = null,
+  margin?: number,
+): Promise<ReturnType<TileEdit['commit']> | null> {
   let hb: Rect | null = null;
   for (let y = 0; y < hole.h; y++)
     for (let x = 0; x < hole.w; x++)

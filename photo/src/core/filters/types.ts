@@ -57,4 +57,5 @@ export const num = (p: Params, k: string, d = 0): number => (typeof p[k] === 'nu
 export const str = (p: Params, k: string, d = ''): string => (typeof p[k] === 'string' ? (p[k] as string) : d);
 export const bool = (p: Params, k: string, d = false): boolean => (typeof p[k] === 'boolean' ? (p[k] as boolean) : d);
 export const vec = (p: Params, k: string, d: [number, number] = [0.5, 0.5]): [number, number] => (Array.isArray(p[k]) ? (p[k] as [number, number]) : d);
-export const col = (p: Params, k: string, d: [number, number, number] = [1, 1, 1]): [number, number, number] => (Array.isArray(p[k]) ? (p[k] as [number, number, number]) : d);
+export const col = (p: Params, k: string, d: [number, number, number] = [1, 1, 1]): [number, number, number] =>
+  Array.isArray(p[k]) ? (p[k] as [number, number, number]) : d;

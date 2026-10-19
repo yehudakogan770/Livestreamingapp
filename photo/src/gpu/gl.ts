@@ -117,7 +117,16 @@ export function scratchUnit(gl: WebGL2RenderingContext): void {
   gl.activeTexture(gl.TEXTURE15);
 }
 
-export function makeTexture(gl: WebGL2RenderingContext, w: number, h: number, internal: number, format: number, type: number, filter: number = gl.NEAREST, data: ArrayBufferView | null = null): WebGLTexture {
+export function makeTexture(
+  gl: WebGL2RenderingContext,
+  w: number,
+  h: number,
+  internal: number,
+  format: number,
+  type: number,
+  filter: number = gl.NEAREST,
+  data: ArrayBufferView | null = null,
+): WebGLTexture {
   const t = gl.createTexture()!;
   scratchUnit(gl);
   gl.bindTexture(gl.TEXTURE_2D, t);

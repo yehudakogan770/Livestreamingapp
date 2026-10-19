@@ -6,7 +6,20 @@
 import { app, current, requestFrame, toast, bump } from '../state';
 import { applySelection, transformSelection } from '../ops/select';
 import { flatten, canvasRect, selectionMask, withSelection } from '../ops/common';
-import { ellipseMask, fillPolygons, magicWand, quickSelect, rectMask, maskOutline, simplify, combine, emptyMask, featherMask, type Mask, type SelectOp } from '../../core/selection';
+import {
+  ellipseMask,
+  fillPolygons,
+  magicWand,
+  quickSelect,
+  rectMask,
+  maskOutline,
+  simplify,
+  combine,
+  emptyMask,
+  featherMask,
+  type Mask,
+  type SelectOp,
+} from '../../core/selection';
 import { hasRaster } from '../../core/layers';
 import type { Doc, Rect } from '../../core/types';
 import type { Overlay, Tool, ToolEvent } from './types';
@@ -29,7 +42,8 @@ export function sampleSource(all: boolean): { w: number; h: number; data: Float3
   const s = current();
   if (!s) return null;
   const d = s.doc;
-  if (cache && cache.layers === d.layers && cache.all === all && cache.doc.width === d.width && cache.doc.height === d.height) return { w: d.width, h: d.height, data: cache.data };
+  if (cache && cache.layers === d.layers && cache.all === all && cache.doc.width === d.width && cache.doc.height === d.height)
+    return { w: d.width, h: d.height, data: cache.data };
   let data: Float32Array;
   const l = s.activeLayer();
   if (!all && l && hasRaster(l)) data = l.raster.read(canvasRect(d));
@@ -40,7 +54,8 @@ export function sampleSource(all: boolean): { w: number; h: number; data: Float3
 
 // ---- marquees ----
 
-let drag: { x0: number; y0: number; x1: number; y1: number; op: SelectOp; moving: boolean; outline: number[][] | null; alt: boolean; shift: boolean } | null = null;
+let drag: { x0: number; y0: number; x1: number; y1: number; op: SelectOp; moving: boolean; outline: number[][] | null; alt: boolean; shift: boolean } | null =
+  null;
 
 function marqueeRect(d: NonNullable<typeof drag>, square: boolean, centered: boolean): Rect {
   const o = app.get().opts.selection;
@@ -87,7 +102,17 @@ function startMoveOutline(e: ToolEvent): boolean {
   const m = selectionMask(s.doc);
   if (!m) return false;
   const step = Math.max(1, Math.round(Math.max(s.doc.width, s.doc.height) / 1500));
-  drag = { x0: e.x, y0: e.y, x1: e.x, y1: e.y, op: 'replace', moving: true, outline: maskOutline(m, step).map((p) => simplify(p, step * 0.7)), alt: false, shift: false };
+  drag = {
+    x0: e.x,
+    y0: e.y,
+    x1: e.x,
+    y1: e.y,
+    op: 'replace',
+    moving: true,
+    outline: maskOutline(m, step).map((p) => simplify(p, step * 0.7)),
+    alt: false,
+    shift: false,
+  };
   return true;
 }
 
@@ -363,7 +388,8 @@ export function snap45(x0: number, y0: number, x: number, y: number): [number, n
 
 // ---- magnetic lasso: the path between anchors follows edges (live wire) ----
 
-let mag: { anchors: number[]; fixed: number[]; live: number[]; op: SelectOp; cost: Float32Array | null; w: number; h: number; lastAnchorAt: number } | null = null;
+let mag: { anchors: number[]; fixed: number[]; live: number[]; op: SelectOp; cost: Float32Array | null; w: number; h: number; lastAnchorAt: number } | null =
+  null;
 
 function edgeCost(): { cost: Float32Array; w: number; h: number } | null {
   const src = sampleSource(true);
@@ -491,7 +517,19 @@ export const magneticLassoTool: Tool = {
     }
     if (e.detail >= 2 || Math.hypot(e.x - mag.anchors[0]!, e.y - mag.anchors[1]!) < docPx(8)) {
       // Close back to the start along the edge.
-      if (mag.cost) mag.live.push(...liveWire(mag.cost, mag.w, mag.h, mag.live.length ? mag.live[mag.live.length - 2]! : mag.anchors[mag.anchors.length - 2]!, mag.live.length ? mag.live[mag.live.length - 1]! : mag.anchors[mag.anchors.length - 1]!, mag.anchors[0]!, mag.anchors[1]!, app.get().opts.magnetic.width * 2));
+      if (mag.cost)
+        mag.live.push(
+          ...liveWire(
+            mag.cost,
+            mag.w,
+            mag.h,
+            mag.live.length ? mag.live[mag.live.length - 2]! : mag.anchors[mag.anchors.length - 2]!,
+            mag.live.length ? mag.live[mag.live.length - 1]! : mag.anchors[mag.anchors.length - 1]!,
+            mag.anchors[0]!,
+            mag.anchors[1]!,
+            app.get().opts.magnetic.width * 2,
+          ),
+        );
       finishMag();
       return;
     }
@@ -601,7 +639,8 @@ function quickStep(): void {
     const cx = px - win.x,
       cy = py - win.y;
     for (let y = Math.max(0, Math.floor(cy - r)); y < Math.min(win.h, Math.ceil(cy + r)); y++)
-      for (let x = Math.max(0, Math.floor(cx - r)); x < Math.min(win.w, Math.ceil(cx + r)); x++) if ((x - cx) ** 2 + (y - cy) ** 2 <= r * r) seeds.data[y * win.w + x] = 255;
+      for (let x = Math.max(0, Math.floor(cx - r)); x < Math.min(win.w, Math.ceil(cx + r)); x++)
+        if ((x - cx) ** 2 + (y - cy) ** 2 <= r * r) seeds.data[y * win.w + x] = 255;
   }
   quick.pending = [];
   const part = quickSelect({ w: win.w, h: win.h, data }, seeds, r * 2.5, 1);
@@ -639,12 +678,13 @@ export const quickSelectTool: Tool = {
     if (quick.last && Math.hypot(e.x - quick.last[0], e.y - quick.last[1]) < r) return;
     quick.last = [e.x, e.y];
     quick.pending.push([e.x, e.y]);
-    if (!quick.timer) quick.timer = window.setTimeout(() => {
-      if (quick) {
-        quick.timer = 0;
-        quickStep();
-      }
-    }, 30);
+    if (!quick.timer)
+      quick.timer = window.setTimeout(() => {
+        if (quick) {
+          quick.timer = 0;
+          quickStep();
+        }
+      }, 30);
   },
   up: () => {
     const s = current();
@@ -697,6 +737,19 @@ export const objectSelectTool: Tool = {
     if (!objBox) return;
     const x = Math.min(objBox.x0, objBox.x1),
       y = Math.min(objBox.y0, objBox.y1);
-    drawPolyline(o, [x, y, x + Math.abs(objBox.x1 - objBox.x0), y, x + Math.abs(objBox.x1 - objBox.x0), y + Math.abs(objBox.y1 - objBox.y0), x, y + Math.abs(objBox.y1 - objBox.y0)], true);
+    drawPolyline(
+      o,
+      [
+        x,
+        y,
+        x + Math.abs(objBox.x1 - objBox.x0),
+        y,
+        x + Math.abs(objBox.x1 - objBox.x0),
+        y + Math.abs(objBox.y1 - objBox.y0),
+        x,
+        y + Math.abs(objBox.y1 - objBox.y0),
+      ],
+      true,
+    );
   },
 };

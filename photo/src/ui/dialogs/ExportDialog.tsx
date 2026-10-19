@@ -28,7 +28,19 @@ export function ExportDialog({ onClose, parts }: { onClose: () => void; parts?: 
   const s = current()!;
   const d = s.doc;
   const [formats, setFormats] = useState<ExportFormat[]>(['png', 'jpeg', 'gif', 'tiff', 'bmp']);
-  const [o, setO] = useState<ExportOptions>({ format: 'png', quality: 0.9, scale: 1, depth: 8, embedProfile: true, toSrgb: d.profile.id !== 'srgb', transparency: true, background: [1, 1, 1], resample: 'bicubic', colors: 256, dither: true });
+  const [o, setO] = useState<ExportOptions>({
+    format: 'png',
+    quality: 0.9,
+    scale: 1,
+    depth: 8,
+    embedProfile: true,
+    toSrgb: d.profile.id !== 'srgb',
+    transparency: true,
+    background: [1, 1, 1],
+    resample: 'bicubic',
+    colors: 256,
+    dither: true,
+  });
   const [w, setW] = useState(d.width);
   const [h, setH] = useState(d.height);
   const [name, setName] = useState(d.name);
@@ -52,7 +64,17 @@ export function ExportDialog({ onClose, parts }: { onClose: () => void; parts?: 
       try {
         const k = Math.min(1, 1200 / Math.max(w, h));
         const bytes = await exportBytes(d, { ...o, width: Math.max(1, Math.round(w * k)), height: Math.max(1, Math.round(h * k)) });
-        const mime = { png: 'image/png', jpeg: 'image/jpeg', webp: 'image/webp', avif: 'image/avif', gif: 'image/gif', bmp: 'image/bmp', tiff: '', psd: '', lumphoto: '' }[o.format];
+        const mime = {
+          png: 'image/png',
+          jpeg: 'image/jpeg',
+          webp: 'image/webp',
+          avif: 'image/avif',
+          gif: 'image/gif',
+          bmp: 'image/bmp',
+          tiff: '',
+          psd: '',
+          lumphoto: '',
+        }[o.format];
         const url = mime ? URL.createObjectURL(new Blob([bytes as BlobPart], { type: mime })) : '';
         setPreview((prev) => {
           if (prev?.url) URL.revokeObjectURL(prev.url);
@@ -72,10 +94,19 @@ export function ExportDialog({ onClose, parts }: { onClose: () => void; parts?: 
   };
   const lossy = o.format === 'jpeg' || o.format === 'webp' || o.format === 'avif';
   return (
-    <Dialog title={parts ? `Export ${parts === 'artboards' ? 'Artboards' : 'Slices'}` : 'Export As'} onClose={onClose} width={820} foot={<OkCancel onOk={() => void ok()} onCancel={onClose} ok="Export" />}>
+    <Dialog
+      title={parts ? `Export ${parts === 'artboards' ? 'Artboards' : 'Slices'}` : 'Export As'}
+      onClose={onClose}
+      width={820}
+      foot={<OkCancel onOk={() => void ok()} onCancel={onClose} ok="Export" />}
+    >
       <div className="lp-cols">
         <div className="lp-preview-box" style={{ flex: 1, minHeight: 380 }}>
-          {preview?.url ? <img src={preview.url} alt="Export preview" /> : <span className="lp-note">{o.format === 'tiff' ? 'TIFF files are not shown here.' : 'Preparing the preview…'}</span>}
+          {preview?.url ? (
+            <img src={preview.url} alt="Export preview" />
+          ) : (
+            <span className="lp-note">{o.format === 'tiff' ? 'TIFF files are not shown here.' : 'Preparing the preview…'}</span>
+          )}
         </div>
         <div style={{ width: 290, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <Select
@@ -99,11 +130,23 @@ export function ExportDialog({ onClose, parts }: { onClose: () => void; parts?: 
           {!parts && (
             <span className="lp-opt">
               <span>Name</span>
-              <input className="lp-input" style={{ flex: 1 }} value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.stopPropagation()} aria-label="File name" />
+              <input
+                className="lp-input"
+                style={{ flex: 1 }}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
+                aria-label="File name"
+              />
             </span>
           )}
           <div className="lp-section-title">File Settings</div>
-          <Select label="Format" value={o.format} options={formats.map((f) => [f, EXPORT_LABEL[f]] as [ExportFormat, string])} onChange={(v) => set({ format: v })} />
+          <Select
+            label="Format"
+            value={o.format}
+            options={formats.map((f) => [f, EXPORT_LABEL[f]] as [ExportFormat, string])}
+            onChange={(v) => set({ format: v })}
+          />
           {lossy && <Slider label="Quality" value={o.quality} min={0.05} max={1} step={0.01} scale={100} suffix="%" onChange={(v) => set({ quality: v })} />}
           {(o.format === 'png' || o.format === 'tiff') && d.depth !== 8 && (
             <Select
@@ -131,27 +174,38 @@ export function ExportDialog({ onClose, parts }: { onClose: () => void; parts?: 
           )}
           <div className="lp-section-title">Image Size</div>
           <NumberField label="Width" value={w} min={1} max={30000} suffix="px" onChange={setWidth} />
-          <NumberField label="Height" value={h} min={1} max={30000} suffix="px" onChange={(v) => {
-            setH(v);
-            setW(Math.max(1, Math.round((v * d.width) / d.height)));
-          }} />
+          <NumberField
+            label="Height"
+            value={h}
+            min={1}
+            max={30000}
+            suffix="px"
+            onChange={(v) => {
+              setH(v);
+              setW(Math.max(1, Math.round((v * d.width) / d.height)));
+            }}
+          />
           <span className="lp-opt">
             <span>Scale</span>
             <Select
               value={String(Math.round((w / d.width) * 100))}
-              options={[...new Set(['25', '50', '75', '100', '150', '200', '300', String(Math.round((w / d.width) * 100))])].map((v) => [v, `${v}%`] as [string, string])}
+              options={[...new Set(['25', '50', '75', '100', '150', '200', '300', String(Math.round((w / d.width) * 100))])].map(
+                (v) => [v, `${v}%`] as [string, string],
+              )}
               onChange={(v) => setWidth(Math.max(1, Math.round((d.width * parseFloat(v)) / 100)))}
             />
           </span>
           <Select
             label="Resample"
             value={o.resample ?? 'bicubic'}
-            options={[
-              ['bicubic', 'Bicubic'],
-              ['lanczos', 'Lanczos'],
-              ['bilinear', 'Bilinear'],
-              ['nearest', 'Nearest Neighbor'],
-            ] as [Resample, string][]}
+            options={
+              [
+                ['bicubic', 'Bicubic'],
+                ['lanczos', 'Lanczos'],
+                ['bilinear', 'Bilinear'],
+                ['nearest', 'Nearest Neighbor'],
+              ] as [Resample, string][]
+            }
             onChange={(v) => set({ resample: v })}
           />
           <div className="lp-section-title">Color Space</div>
@@ -162,7 +216,9 @@ export function ExportDialog({ onClose, parts }: { onClose: () => void; parts?: 
           </div>
         </div>
       </div>
-      {picking && <ColorPickerDialog p={{ color: o.background, onPick: (c: [number, number, number]) => set({ background: c }) }} onClose={() => setPicking(false)} />}
+      {picking && (
+        <ColorPickerDialog p={{ color: o.background, onPick: (c: [number, number, number]) => set({ background: c }) }} onClose={() => setPicking(false)} />
+      )}
     </Dialog>
   );
 }

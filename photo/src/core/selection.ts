@@ -226,7 +226,14 @@ export function ellipseMask(w: number, h: number, r: Rect, antialias = true): Ma
 export function pathMask(w: number, h: number, p: VectorPath, antialias = true): Mask {
   // Each subpath combines with the ones before it.
   const subs = flatten(p, 0.25);
-  if (subs.every((s) => !s.op || s.op === 'add')) return fillPolygons(w, h, subs.map((s) => s.pts), antialias, p.rule === 'evenodd');
+  if (subs.every((s) => !s.op || s.op === 'add'))
+    return fillPolygons(
+      w,
+      h,
+      subs.map((s) => s.pts),
+      antialias,
+      p.rule === 'evenodd',
+    );
   let acc: Mask | null = null;
   for (const s of subs) {
     const one = fillPolygons(w, h, [s.pts], antialias);
@@ -592,7 +599,7 @@ export function fillHoles(m: Mask, maxArea: number): Mask {
         y = (i / w) | 0;
       if (x === 0 || y === 0 || x === w - 1 || y === h - 1) touchesEdge = true;
       const nb = [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1];
-      for (const j of nb) if (j >= 0 && !data[j] && !seen[j]) (seen[j] = 1), stack.push(j);
+      for (const j of nb) if (j >= 0 && !data[j] && !seen[j]) ((seen[j] = 1), stack.push(j));
     }
     if (!touchesEdge && region.length <= maxArea) for (const i of region) out.data[i] = 255;
   }
@@ -739,20 +746,50 @@ export function maskOutline(m: Mask, step = 1): number[][] {
         left: [number, number] = [X, Y + step / 2];
       const S = (p: [number, number], q: [number, number]) => add(p[0], p[1], q[0], q[1]);
       switch (idx) {
-        case 1: S(bottom, left); break;
-        case 2: S(right, bottom); break;
-        case 3: S(right, left); break;
-        case 4: S(top, right); break;
-        case 5: S(top, left); S(bottom, right); break;
-        case 6: S(top, bottom); break;
-        case 7: S(top, left); break;
-        case 8: S(left, top); break;
-        case 9: S(bottom, top); break;
-        case 10: S(left, bottom); S(right, top); break;
-        case 11: S(right, top); break;
-        case 12: S(left, right); break;
-        case 13: S(bottom, right); break;
-        case 14: S(left, bottom); break;
+        case 1:
+          S(bottom, left);
+          break;
+        case 2:
+          S(right, bottom);
+          break;
+        case 3:
+          S(right, left);
+          break;
+        case 4:
+          S(top, right);
+          break;
+        case 5:
+          S(top, left);
+          S(bottom, right);
+          break;
+        case 6:
+          S(top, bottom);
+          break;
+        case 7:
+          S(top, left);
+          break;
+        case 8:
+          S(left, top);
+          break;
+        case 9:
+          S(bottom, top);
+          break;
+        case 10:
+          S(left, bottom);
+          S(right, top);
+          break;
+        case 11:
+          S(right, top);
+          break;
+        case 12:
+          S(left, right);
+          break;
+        case 13:
+          S(bottom, right);
+          break;
+        case 14:
+          S(left, bottom);
+          break;
       }
     }
   }

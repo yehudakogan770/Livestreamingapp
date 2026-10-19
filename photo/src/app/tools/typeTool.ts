@@ -114,7 +114,8 @@ function spliceRuns(t: TextModel, from: number, to: number, insert: string): Tex
     for (const r of out) {
       if (!done && from <= pos + r.text.length) {
         const k = from - pos;
-        if (JSON.stringify(r.style ?? {}) === JSON.stringify(styleAtFrom ?? {})) res.push({ text: r.text.slice(0, k) + insert + r.text.slice(k), style: r.style });
+        if (JSON.stringify(r.style ?? {}) === JSON.stringify(styleAtFrom ?? {}))
+          res.push({ text: r.text.slice(0, k) + insert + r.text.slice(k), style: r.style });
         else {
           if (k > 0) res.push({ text: r.text.slice(0, k), style: r.style });
           res.push({ text: insert, style: styleAtFrom });
@@ -183,7 +184,10 @@ export function applyCharStyle(patch: Partial<CharStyle>): void {
   const l = s.activeLayer();
   if (l?.kind !== 'text') return;
   const t = { ...l.text, base: { ...l.text.base, ...patch }, runs: l.text.runs.map((r) => (r.style ? { ...r, style: { ...r.style, ...patch } } : r)) };
-  s.commit('Character', 'type', { ...s.doc, layers: updateLayer(s.doc.layers, l.id, () => ({ ...l, text: t, raster: renderTextRaster({ ...l, text: t }, s.doc) })) });
+  s.commit('Character', 'type', {
+    ...s.doc,
+    layers: updateLayer(s.doc.layers, l.id, () => ({ ...l, text: t, raster: renderTextRaster({ ...l, text: t }, s.doc) })),
+  });
   bump();
 }
 
@@ -197,7 +201,10 @@ export function applyParaStyle(patch: Partial<ParaStyle>): void {
     edit.input.focus();
     return;
   }
-  s.commit('Paragraph', 'type', { ...s.doc, layers: updateLayer(s.doc.layers, l.id, () => ({ ...l, text: t, raster: renderTextRaster({ ...l, text: t }, s.doc) })) });
+  s.commit('Paragraph', 'type', {
+    ...s.doc,
+    layers: updateLayer(s.doc.layers, l.id, () => ({ ...l, text: t, raster: renderTextRaster({ ...l, text: t }, s.doc) })),
+  });
   bump();
 }
 
@@ -260,7 +267,13 @@ export const typeTool: Tool = {
     boxDrag = null;
     if (!s || !d) return;
     const o = app.get().opts.type;
-    const style: Partial<CharStyle> = { family: o.family, weight: o.weight, italic: o.italic, size: o.size, color: [...app.get().fg] as [number, number, number] };
+    const style: Partial<CharStyle> = {
+      family: o.family,
+      weight: o.weight,
+      italic: o.italic,
+      size: o.size,
+      color: [...app.get().fg] as [number, number, number],
+    };
     const w = Math.abs(d.x1 - d.x0),
       h = Math.abs(d.y1 - d.y0);
     let t: TextModel;

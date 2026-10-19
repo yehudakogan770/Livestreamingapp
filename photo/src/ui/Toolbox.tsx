@@ -133,7 +133,17 @@ export const TOOL_ICONS: Record<ToolId, ComponentType<LucideProps>> = {
 // The gradient tool gets its own little square (no lucide icon reads as one).
 function GradientIcon({ size = 18 }: LucideProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <rect x="3" y="3" width="18" height="18" rx="2" />
       <path d="M7 3v18M11 3v18" strokeOpacity={0.85} />
       <path d="M15 3v18" strokeOpacity={0.5} />
@@ -207,23 +217,59 @@ export function Toolbox() {
       })}
       <div className="lp-tool-sep" />
       <div className="lp-colors">
-        <button className="lp-fg" style={{ background: hex(fg) }} title="Foreground color" aria-label="Foreground color" onClick={() => openDialog('colorPicker', { target: 'fg' })} />
-        <button className="lp-bg" style={{ background: hex(bg) }} title="Background color" aria-label="Background color" onClick={() => openDialog('colorPicker', { target: 'bg' })} />
-        <button className="lp-mini" style={{ right: -2, top: 0 }} title={`Switch colors (${shortcutLabel('X')})`} aria-label="Switch colors" onClick={() => app.set((s) => ({ fg: s.bg, bg: s.fg }))}>
+        <button
+          className="lp-fg"
+          style={{ background: hex(fg) }}
+          title="Foreground color"
+          aria-label="Foreground color"
+          onClick={() => openDialog('colorPicker', { target: 'fg' })}
+        />
+        <button
+          className="lp-bg"
+          style={{ background: hex(bg) }}
+          title="Background color"
+          aria-label="Background color"
+          onClick={() => openDialog('colorPicker', { target: 'bg' })}
+        />
+        <button
+          className="lp-mini"
+          style={{ right: -2, top: 0 }}
+          title={`Switch colors (${shortcutLabel('X')})`}
+          aria-label="Switch colors"
+          onClick={() => app.set((s) => ({ fg: s.bg, bg: s.fg }))}
+        >
           <ArrowLeftRight size={11} />
         </button>
-        <button className="lp-mini" style={{ left: 0, bottom: -2 }} title="Default colors (D)" aria-label="Default colors" onClick={() => app.set({ fg: [0, 0, 0], bg: [1, 1, 1] })}>
+        <button
+          className="lp-mini"
+          style={{ left: 0, bottom: -2 }}
+          title="Default colors (D)"
+          aria-label="Default colors"
+          onClick={() => app.set({ fg: [0, 0, 0], bg: [1, 1, 1] })}
+        >
           <svg width="11" height="11" viewBox="0 0 11 11" aria-hidden="true">
             <rect x="0.5" y="0.5" width="6" height="6" fill="#000" stroke="#888" />
             <rect x="4.5" y="4.5" width="6" height="6" fill="#fff" stroke="#888" />
           </svg>
         </button>
       </div>
-      <button className="lp-tool" aria-pressed={quick} title="Edit in Quick Mask Mode (Q)" aria-label="Quick Mask" onClick={() => void run('select.quickMask')} style={{ marginTop: 4 }}>
+      <button
+        className="lp-tool"
+        aria-pressed={quick}
+        title="Edit in Quick Mask Mode (Q)"
+        aria-label="Quick Mask"
+        onClick={() => void run('select.quickMask')}
+        style={{ marginTop: 4 }}
+      >
         {quick ? <CircleDot size={18} strokeWidth={1.75} /> : <Focus size={18} strokeWidth={1.75} />}
       </button>
       {fly && (
-        <div className="lp-tool-flyout" style={{ left: fly.x, top: Math.min(fly.y, window.innerHeight - 40 * TOOL_GROUPS[fly.gi]!.length) }} onPointerDown={(e) => e.stopPropagation()} role="menu">
+        <div
+          className="lp-tool-flyout"
+          style={{ left: fly.x, top: Math.min(fly.y, window.innerHeight - 40 * TOOL_GROUPS[fly.gi]!.length) }}
+          onPointerDown={(e) => e.stopPropagation()}
+          role="menu"
+        >
           {TOOL_GROUPS[fly.gi]!.filter((t) => !t.hidden).map((t) => (
             <button
               key={t.id}

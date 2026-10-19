@@ -22,8 +22,31 @@ function sampleDoc(): Doc {
   const a: PixelLayer = { ...pixelLayer('Red', red), blend: 'multiply', opacity: 0.75, styles: { dropShadow: defaultStyle('dropShadow') } };
   a.mask = { raster: Raster.filled(8, 1, { x: 0, y: 0, w: 40, h: 80 }, [1]), background: 0, enabled: true, linked: true, density: 1, feather: 0 };
   const blue: PixelLayer = { ...pixelLayer('Blue', Raster.filled(8, 4, { x: 50, y: 30, w: 60, h: 40 }, [0.1, 0.2, 0.9, 0.5])), blend: 'screen' };
-  const adj: AdjustmentLayer = { id: uid(), name: 'Levels 1', kind: 'adjust', adjust: 'levels', params: defaultParams('levels'), visible: true, opacity: 1, fill: 1, blend: 'normal', clip: false, locks: {} };
-  const fill: FillLayer = { id: uid(), name: 'Color Fill 1', kind: 'fill', content: { type: 'solid', color: [0.2, 0.6, 0.3, 1] }, visible: true, opacity: 0.3, fill: 1, blend: 'normal', clip: false, locks: {} };
+  const adj: AdjustmentLayer = {
+    id: uid(),
+    name: 'Levels 1',
+    kind: 'adjust',
+    adjust: 'levels',
+    params: defaultParams('levels'),
+    visible: true,
+    opacity: 1,
+    fill: 1,
+    blend: 'normal',
+    clip: false,
+    locks: {},
+  };
+  const fill: FillLayer = {
+    id: uid(),
+    name: 'Color Fill 1',
+    kind: 'fill',
+    content: { type: 'solid', color: [0.2, 0.6, 0.3, 1] },
+    visible: true,
+    opacity: 0.3,
+    fill: 1,
+    blend: 'normal',
+    clip: false,
+    locks: {},
+  };
   const g: GroupLayer = { ...groupLayer('Group 1', [blue, adj]), passThrough: false };
   doc.layers.push(a, g, fill);
   return doc;
@@ -68,9 +91,19 @@ describe('PSD', () => {
     doc.layers = [pixelLayer('Deep', r)];
     const path = rectPath(8, 8, 30, 20);
     const shape: ShapeLayer = {
-      id: uid(), name: 'Rectangle 1', kind: 'shape', path, fillColor: [1, 0.5, 0, 1], stroke: null,
+      id: uid(),
+      name: 'Rectangle 1',
+      kind: 'shape',
+      path,
+      fillColor: [1, 0.5, 0, 1],
+      stroke: null,
       raster: Raster.filled(8, 4, { x: 8, y: 8, w: 30, h: 20 }, [1, 0.5, 0, 1]),
-      visible: true, opacity: 1, fill: 1, blend: 'normal', clip: false, locks: {},
+      visible: true,
+      opacity: 1,
+      fill: 1,
+      blend: 'normal',
+      clip: false,
+      locks: {},
     };
     doc.layers.push(shape);
     const back = await readPSD(await writePSD(doc, compositeAll(doc)));
@@ -131,7 +164,11 @@ describe('GIF and BMP', () => {
     px.set([255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255]);
     const pal = medianCut(px, 4);
     expect(pal.length).toBeLessThanOrEqual(4);
-    for (const c of [[255, 0, 0], [0, 255, 0], [0, 0, 255]]) {
+    for (const c of [
+      [255, 0, 0],
+      [0, 255, 0],
+      [0, 0, 255],
+    ]) {
       const best = Math.min(...pal.map((p) => Math.abs(p[0]! - c[0]!) + Math.abs(p[1]! - c[1]!) + Math.abs(p[2]! - c[2]!)));
       expect(best).toBeLessThan(10);
     }
@@ -165,10 +202,11 @@ describe('content-aware fill', () => {
     const out = inpaint({ w, h, c: data }, hole);
     // Every filled value is near 0 or 1 (copied texture, not a smear).
     let smeared = 0;
-    for (let i = 0; i < w * h; i++) if (hole[i]) {
-      const v = out.c[i * 3]!;
-      if (v > 0.25 && v < 0.75) smeared++;
-    }
+    for (let i = 0; i < w * h; i++)
+      if (hole[i]) {
+        const v = out.c[i * 3]!;
+        if (v > 0.25 && v < 0.75) smeared++;
+      }
     expect(smeared).toBeLessThan(30);
   });
 });

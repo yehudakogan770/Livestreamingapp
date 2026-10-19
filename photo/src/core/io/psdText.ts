@@ -104,7 +104,23 @@ const at = (o: EVal | undefined, ...path: (string | number)[]): EVal | undefined
 export function fontFromPostScript(ps: string): { family: string; weight: number; italic: boolean } {
   const [famRaw, style = 'Regular'] = ps.split('-');
   const s = style.toLowerCase();
-  const weight = /thin|hairline/.test(s) ? 100 : /extralight|ultralight/.test(s) ? 200 : /light/.test(s) ? 300 : /medium/.test(s) ? 500 : /semibold|demibold/.test(s) ? 600 : /extrabold|ultrabold/.test(s) ? 800 : /black|heavy/.test(s) ? 900 : /bold/.test(s) ? 700 : 400;
+  const weight = /thin|hairline/.test(s)
+    ? 100
+    : /extralight|ultralight/.test(s)
+      ? 200
+      : /light/.test(s)
+        ? 300
+        : /medium/.test(s)
+          ? 500
+          : /semibold|demibold/.test(s)
+            ? 600
+            : /extrabold|ultrabold/.test(s)
+              ? 800
+              : /black|heavy/.test(s)
+                ? 900
+                : /bold/.test(s)
+                  ? 700
+                  : 400;
   const family = (famRaw ?? ps).replace(/MT$/, '').replace(/([a-z])([A-Z])/g, '$1 $2');
   return { family, weight, italic: /italic|oblique/.test(s) };
 }
@@ -112,7 +128,24 @@ export function fontFromPostScript(ps: string): { family: string; weight: number
 export function postScriptName(s: CharStyle): string {
   const fam = s.family.replace(/\s+Variable$/, '').replace(/\s+/g, '');
   const w = s.weight;
-  const style = (w <= 100 ? 'Thin' : w <= 200 ? 'ExtraLight' : w <= 300 ? 'Light' : w <= 400 ? 'Regular' : w <= 500 ? 'Medium' : w <= 600 ? 'SemiBold' : w <= 700 ? 'Bold' : w <= 800 ? 'ExtraBold' : 'Black') + (s.italic ? 'Italic' : '');
+  const style =
+    (w <= 100
+      ? 'Thin'
+      : w <= 200
+        ? 'ExtraLight'
+        : w <= 300
+          ? 'Light'
+          : w <= 400
+            ? 'Regular'
+            : w <= 500
+              ? 'Medium'
+              : w <= 600
+                ? 'SemiBold'
+                : w <= 700
+                  ? 'Bold'
+                  : w <= 800
+                    ? 'ExtraBold'
+                    : 'Black') + (s.italic ? 'Italic' : '');
   return `${fam}-${style === 'RegularItalic' ? 'Italic' : style}`;
 }
 
@@ -207,7 +240,11 @@ function styleSheet(s: CharStyle, fontIndex: number): string {
 
 /** EngineData for a text model (sizes in the layer's own units: the transform carries no scale). */
 export function engineData(t: TextModel): Uint8Array {
-  const text = t.runs.map((r) => r.text).join('').replace(/\n/g, '\r') + '\r';
+  const text =
+    t.runs
+      .map((r) => r.text)
+      .join('')
+      .replace(/\n/g, '\r') + '\r';
   const styles = t.runs.map((r) => ({ ...t.base, ...r.style }));
   const fontNames: string[] = [];
   const fontIdx = (s: CharStyle) => {

@@ -438,7 +438,7 @@ export function hsbToRgb(h: number, s: number, v: number): [number, number, numb
 /** sRGB (encoded) → CIE Lab (D50). */
 export function rgbToLab(r: number, g: number, b: number, p: ColorProfile = SRGB): [number, number, number] {
   const [X, Y, Z] = apply3(p.toXYZ, [decode(p.trc, r), decode(p.trc, g), decode(p.trc, b)]);
-  const f = (t: number) => (t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116);
+  const f = (t: number) => (t > 216 / 24389 ? Math.cbrt(t) : ((24389 / 27) * t + 16) / 116);
   const fx = f(X / D50[0]),
     fy = f(Y / D50[1]),
     fz = f(Z / D50[2]);

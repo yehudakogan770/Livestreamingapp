@@ -52,11 +52,29 @@ export function CharacterPanel() {
       </div>
       <div className="lp-panel-row">
         <NumberField label="Size" value={c.size} min={1} max={5000} digits={1} suffix="px" width={52} onChange={(v) => set({ size: v })} />
-        <NumberField label="Leading" value={c.leading} min={0} max={5000} digits={1} width={48} onChange={(v) => set({ leading: v })} title="Line height (0: auto)" />
+        <NumberField
+          label="Leading"
+          value={c.leading}
+          min={0}
+          max={5000}
+          digits={1}
+          width={48}
+          onChange={(v) => set({ leading: v })}
+          title="Line height (0: auto)"
+        />
       </div>
       <div className="lp-panel-row">
         <NumberField label="Tracking" value={c.tracking} min={-1000} max={10000} width={48} onChange={(v) => set({ tracking: v })} />
-        <NumberField label="Baseline" value={c.baselineShift} min={-1000} max={1000} digits={1} suffix="px" width={44} onChange={(v) => set({ baselineShift: v })} />
+        <NumberField
+          label="Baseline"
+          value={c.baselineShift}
+          min={-1000}
+          max={1000}
+          digits={1}
+          suffix="px"
+          width={44}
+          onChange={(v) => set({ baselineShift: v })}
+        />
       </div>
       <div className="lp-panel-row">
         <NumberField label="Horizontal" value={c.hScale} min={1} max={1000} suffix="%" width={44} onChange={(v) => set({ hScale: v })} />
@@ -64,7 +82,11 @@ export function CharacterPanel() {
       </div>
       <div className="lp-panel-row">
         <span className="lp-label">Color</span>
-        <ColorWell color={c.color} title="Text color" onClick={() => openDialog('colorPicker', { color: c.color, onPick: (col: [number, number, number]) => set({ color: col }) })} />
+        <ColorWell
+          color={c.color}
+          title="Text color"
+          onClick={() => openDialog('colorPicker', { color: c.color, onPick: (col: [number, number, number]) => set({ color: col }) })}
+        />
       </div>
       <div className="lp-panel-row" style={{ flexWrap: 'wrap', gap: 10 }}>
         <Check label="Faux Bold" checked={c.fauxBold} onChange={(v) => set({ fauxBold: v })} />

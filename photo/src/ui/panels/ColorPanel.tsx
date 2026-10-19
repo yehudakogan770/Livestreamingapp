@@ -97,7 +97,14 @@ export function HsbPicker({ color, onChange, height = 150 }: { color: RGB; onCha
   };
   return (
     <div>
-      <div className="lp-sv" style={{ height }} onPointerDown={dragSV} role="slider" aria-label="Saturation and brightness" aria-valuenow={Math.round(hsb[1] * 100)}>
+      <div
+        className="lp-sv"
+        style={{ height }}
+        onPointerDown={dragSV}
+        role="slider"
+        aria-label="Saturation and brightness"
+        aria-valuenow={Math.round(hsb[1] * 100)}
+      >
         <canvas ref={sv} />
         <span className="lp-sv-dot" style={{ left: `${hsb[1] * 100}%`, top: `${(1 - hsb[2]) * 100}%`, background: hex(color) }} />
       </div>
@@ -166,12 +173,29 @@ export function ColorPanel() {
     <div className="lp-panel">
       <div className="lp-panel-row">
         <div className="lp-colors" style={{ marginTop: 0, width: 40, height: 36 }}>
-          <button className="lp-fg" style={{ background: hex(fg), outline: which === 'fg' ? '1.5px solid var(--accent)' : undefined }} aria-label="Edit foreground color" onClick={() => setWhich('fg')} />
-          <button className="lp-bg" style={{ background: hex(bg), outline: which === 'bg' ? '1.5px solid var(--accent)' : undefined }} aria-label="Edit background color" onClick={() => setWhich('bg')} />
+          <button
+            className="lp-fg"
+            style={{ background: hex(fg), outline: which === 'fg' ? '1.5px solid var(--accent)' : undefined }}
+            aria-label="Edit foreground color"
+            onClick={() => setWhich('fg')}
+          />
+          <button
+            className="lp-bg"
+            style={{ background: hex(bg), outline: which === 'bg' ? '1.5px solid var(--accent)' : undefined }}
+            aria-label="Edit background color"
+            onClick={() => setWhich('bg')}
+          />
         </div>
         <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', flex: 1 }}>
           {recent.slice(0, 10).map((c, i) => (
-            <button key={i} className="lp-swatch" style={{ background: hex(c), width: 16, height: 16 }} title={hex(c)} aria-label={`Recent color ${hex(c)}`} onClick={() => set(c)} />
+            <button
+              key={i}
+              className="lp-swatch"
+              style={{ background: hex(c), width: 16, height: 16 }}
+              title={hex(c)}
+              aria-label={`Recent color ${hex(c)}`}
+              onClick={() => set(c)}
+            />
           ))}
         </div>
       </div>
@@ -203,7 +227,12 @@ export function SwatchesPanel() {
             }}
           />
         ))}
-        <button title="Add the foreground color" aria-label="Add the foreground color" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--field)' }} onClick={() => app.set((s) => ({ swatches: [...s.swatches, s.fg] }))}>
+        <button
+          title="Add the foreground color"
+          aria-label="Add the foreground color"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--field)' }}
+          onClick={() => app.set((s) => ({ swatches: [...s.swatches, s.fg] }))}
+        >
           <Plus size={12} />
         </button>
       </div>

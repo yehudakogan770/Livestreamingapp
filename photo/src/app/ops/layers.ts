@@ -231,7 +231,10 @@ export function arrange(dir: 'up' | 'down' | 'top' | 'bottom'): void {
   const list = siblingsOf(s.doc.layers, id);
   const idx = list.findIndex((l) => l.id === id);
   const delta = dir === 'up' ? 1 : dir === 'down' ? -1 : dir === 'top' ? list.length - 1 - idx : -idx;
-  change(dir === 'up' ? 'Bring Forward' : dir === 'down' ? 'Send Backward' : dir === 'top' ? 'Bring to Front' : 'Send to Back', 'arrange', (d) => ({ ...d, layers: moveLayer(d.layers, id, delta) }));
+  change(dir === 'up' ? 'Bring Forward' : dir === 'down' ? 'Send Backward' : dir === 'top' ? 'Bring to Front' : 'Send to Back', 'arrange', (d) => ({
+    ...d,
+    layers: moveLayer(d.layers, id, delta),
+  }));
 }
 
 /** Drag and drop in the Layers panel: put `id` above/below/into `target`. */
@@ -278,7 +281,13 @@ function mergeLayers(layers: Layer[], keep: Layer, label: string): void {
     if (b) r = r ? unionR(r, b) : b;
   }
   r = r ? intersect(r, canvasRect(s.doc)) : null;
-  const raster = r ? flattenRaster(s.doc, r, layers.map((x) => ({ ...x, visible: true, clip: false }))) : new Raster(s.doc.depth, 4);
+  const raster = r
+    ? flattenRaster(
+        s.doc,
+        r,
+        layers.map((x) => ({ ...x, visible: true, clip: false })),
+      )
+    : new Raster(s.doc.depth, 4);
   const merged: PixelLayer = { ...pixelLayer(keep.name, raster), id: keep.id, locks: keep.locks };
   const drop = new Set(layers.filter((x) => x.id !== keep.id).map((x) => x.id));
   change(label, 'merge', (d) => ({ ...d, layers: updateLayer(removeLayers(d.layers, drop), keep.id, () => merged) }));
@@ -300,7 +309,11 @@ export function mergeSelected(): void {
   const ids = new Set(s.selected);
   const layers = allLayers(s.doc.layers).filter((l) => ids.has(l.id));
   const top = layers[layers.length - 1]!;
-  const raster = flattenRaster(s.doc, canvasRect(s.doc), layers.map((l) => ({ ...l, visible: true })));
+  const raster = flattenRaster(
+    s.doc,
+    canvasRect(s.doc),
+    layers.map((l) => ({ ...l, visible: true })),
+  );
   const merged = pixelLayer(top.name, raster);
   change('Merge Layers', 'merge', (d) => {
     const placed = insertLayers(d.layers, [merged], top.id, 'above');
@@ -357,7 +370,10 @@ export function rasterize(id?: string): void {
   if (!s || !l) return;
   if (l.kind === 'pixel' || l.kind === 'group' || l.kind === 'adjust') return;
   let raster: Raster;
-  if (l.kind === 'fill') raster = flattenRaster(s.doc, canvasRect(s.doc), [{ ...l, blend: 'normal', opacity: 1, fill: 1, mask: undefined, vmask: undefined, styles: undefined, clip: false }]);
+  if (l.kind === 'fill')
+    raster = flattenRaster(s.doc, canvasRect(s.doc), [
+      { ...l, blend: 'normal', opacity: 1, fill: 1, mask: undefined, vmask: undefined, styles: undefined, clip: false },
+    ]);
   else raster = l.raster.clone();
   const { kind: _k, ...base } = l as Layer & Record<string, unknown>;
   const pl: PixelLayer = {
@@ -423,7 +439,10 @@ export function addMask(how: 'reveal' | 'hide' | 'selection' | 'hideSelection'):
     background = 1;
   }
   const mask: LayerMask = { raster, background, enabled: true, linked: true, density: 1, feather: 0 };
-  change('Add Layer Mask', 'mask', (d) => ({ ...(how === 'selection' || how === 'hideSelection' ? withSelection(d, null) : d), layers: updateLayer(d.layers, l.id, (x) => ({ ...x, mask }) as Layer) }));
+  change('Add Layer Mask', 'mask', (d) => ({
+    ...(how === 'selection' || how === 'hideSelection' ? withSelection(d, null) : d),
+    layers: updateLayer(d.layers, l.id, (x) => ({ ...x, mask }) as Layer),
+  }));
   s.editMask = true;
   bump();
 }
@@ -536,7 +555,12 @@ export function convertToSmart(): void {
   const top = layers[layers.length - 1]!;
   let raster: Raster;
   if (layers.length === 1 && layers[0]!.kind === 'pixel' && !layers[0]!.mask && !layers[0]!.styles) raster = (layers[0] as PixelLayer).raster.clone();
-  else raster = flattenRaster(s.doc, canvasRect(s.doc), layers.map((l) => ({ ...l, visible: true })));
+  else
+    raster = flattenRaster(
+      s.doc,
+      canvasRect(s.doc),
+      layers.map((l) => ({ ...l, visible: true })),
+    );
   const smart: SmartLayer = {
     ...baseLayer(layers.length === 1 ? top.name : 'Smart Object'),
     kind: 'smart',

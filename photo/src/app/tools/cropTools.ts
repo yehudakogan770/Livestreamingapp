@@ -451,7 +451,11 @@ async function commitPerspective(): Promise<void> {
       const full = mul(toOut, T);
       const res = warpProjective(img, full, { x: 0, y: 0, w: W, h: H }, 'bicubic');
       const nr = res.rect ? Raster.fromFloats(d.depth, 4, res.rect, res.data) : new Raster(d.depth, 4);
-      layers.push(l.kind === 'pixel' ? { ...l, raster: nr, mask: undefined } : { ...pixelLayer(l.name, nr), id: l.id, blend: l.blend, opacity: l.opacity, visible: l.visible });
+      layers.push(
+        l.kind === 'pixel'
+          ? { ...l, raster: nr, mask: undefined }
+          : { ...pixelLayer(l.name, nr), id: l.id, blend: l.blend, opacity: l.opacity, visible: l.visible },
+      );
     }
     s.commit('Perspective Crop', 'crop', withSelection({ ...d, width: W, height: H, layers, guides: [] }, null));
   });
@@ -491,10 +495,16 @@ function rectTool(id: 'slice' | 'artboard'): Tool {
       if (rect.w < 2 || rect.h < 2) return;
       if (id === 'slice') {
         const n = s.doc.slices.length + 1;
-        s.commit('Slice', 'slice', { ...s.doc, slices: [...s.doc.slices, { id: uid('s'), name: `${s.doc.name.replace(/\.[^.]+$/, '')}_${String(n).padStart(2, '0')}`, rect }] });
+        s.commit('Slice', 'slice', {
+          ...s.doc,
+          slices: [...s.doc.slices, { id: uid('s'), name: `${s.doc.name.replace(/\.[^.]+$/, '')}_${String(n).padStart(2, '0')}`, rect }],
+        });
       } else {
         const n = s.doc.artboards.length + 1;
-        s.commit('Artboard', 'artboard', { ...s.doc, artboards: [...s.doc.artboards, { id: uid('a'), name: `Artboard ${n}`, rect, background: [1, 1, 1, 1] }] });
+        s.commit('Artboard', 'artboard', {
+          ...s.doc,
+          artboards: [...s.doc.artboards, { id: uid('a'), name: `Artboard ${n}`, rect, background: [1, 1, 1, 1] }],
+        });
       }
       bump();
     },

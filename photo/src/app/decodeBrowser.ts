@@ -61,7 +61,8 @@ export async function decodeWithBrowser(bytes: Uint8Array, mime: string): Promis
   try {
     bmp = await createImageBitmap(blob, { colorSpaceConversion: usable ? 'none' : 'default', premultiplyAlpha: 'none', imageOrientation: 'from-image' });
   } catch {
-    if (mime === 'image/heic' || mime === 'image/heif') throw new Error('HEIC pictures can be opened where the system can read them (Safari on a Mac). Save it as JPEG or PNG first.');
+    if (mime === 'image/heic' || mime === 'image/heif')
+      throw new Error('HEIC pictures can be opened where the system can read them (Safari on a Mac). Save it as JPEG or PNG first.');
     throw new Error('This picture could not be read. It may be damaged, or in a format this browser cannot open.');
   }
   const w = bmp.width,

@@ -27,7 +27,8 @@ function applyComp(c: LayerComp): void {
     if (!st) continue;
     let next: Layer = { ...l, visible: st.visible, styles: st.styles };
     const b = layerBounds(l, s.doc);
-    if (b && st.x !== undefined && st.y !== undefined && (b.x !== st.x || b.y !== st.y) && l.kind !== 'group') next = { ...shiftedLayer(next, st.x - b.x, st.y - b.y) };
+    if (b && st.x !== undefined && st.y !== undefined && (b.x !== st.x || b.y !== st.y) && l.kind !== 'group')
+      next = { ...shiftedLayer(next, st.x - b.x, st.y - b.y) };
     layers = updateLayer(layers, l.id, () => next);
   }
   s.commit(`Apply Layer Comp: ${c.name}`, 'comp', { ...s.doc, layers });
@@ -44,10 +45,15 @@ export function CompsPanel() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ flex: 1, overflow: 'auto' }}>
         {comps.map((c) => (
-          <div key={c.id} className={`lp-row${sel === c.id ? ' lp-sel' : ''}`} onClick={() => {
-            setSel(c.id);
-            applyComp(c);
-          }} title={c.comment || undefined}>
+          <div
+            key={c.id}
+            className={`lp-row${sel === c.id ? ' lp-sel' : ''}`}
+            onClick={() => {
+              setSel(c.id);
+              applyComp(c);
+            }}
+            title={c.comment || undefined}
+          >
             <span style={{ width: 14 }}>{sel === c.id ? <Check size={12} /> : null}</span>
             <span className="lp-grow">{c.name}</span>
           </div>

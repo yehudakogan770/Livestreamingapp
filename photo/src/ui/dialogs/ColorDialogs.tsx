@@ -158,12 +158,25 @@ export function GradientEditorDialog({ p, onClose }: { p: P; onClose: () => void
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 6, marginBottom: 14 }}>
         {GRADIENT_PRESETS.map((pr) => (
-          <button key={pr.name} title={pr.name} aria-label={pr.name} style={{ height: 30, borderRadius: 3, border: '1px solid var(--line-2)', background: gradientCss(pr) }} onClick={() => setG(structuredClone(pr))} />
+          <button
+            key={pr.name}
+            title={pr.name}
+            aria-label={pr.name}
+            style={{ height: 30, borderRadius: 3, border: '1px solid var(--line-2)', background: gradientCss(pr) }}
+            onClick={() => setG(structuredClone(pr))}
+          />
         ))}
       </div>
       <div className="lp-panel-row">
         <span className="lp-label">Name</span>
-        <input className="lp-input" style={{ flex: 1 }} value={g.name} onChange={(e) => setG({ ...g, name: e.target.value })} onKeyDown={(e) => e.stopPropagation()} aria-label="Gradient name" />
+        <input
+          className="lp-input"
+          style={{ flex: 1 }}
+          value={g.name}
+          onChange={(e) => setG({ ...g, name: e.target.value })}
+          onKeyDown={(e) => e.stopPropagation()}
+          aria-label="Gradient name"
+        />
       </div>
       <div style={{ position: 'relative', padding: '18px 8px 30px' }}>
         {/* Opacity stops above, color stops below. */}
@@ -171,7 +184,11 @@ export function GradientEditorDialog({ p, onClose }: { p: P; onClose: () => void
           <span
             key={`a${i}`}
             className={`lp-gradient-stop${sel.kind === 'alpha' && sel.i === i ? ' lp-sel' : ''}`}
-            style={{ left: `calc(8px + (100% - 16px) * ${a.pos})`, top: 2, background: `rgb(${Math.round(a.alpha * 255)},${Math.round(a.alpha * 255)},${Math.round(a.alpha * 255)})` }}
+            style={{
+              left: `calc(8px + (100% - 16px) * ${a.pos})`,
+              top: 2,
+              background: `rgb(${Math.round(a.alpha * 255)},${Math.round(a.alpha * 255)},${Math.round(a.alpha * 255)})`,
+            }}
             onPointerDown={dragStop('alpha', i)}
             role="slider"
             aria-label={`Opacity stop ${i + 1}`}
@@ -222,7 +239,12 @@ export function GradientEditorDialog({ p, onClose }: { p: P; onClose: () => void
           {sel.kind === 'color' ? (
             <>
               <span className="lp-label">Color</span>
-              <button className="lp-swatch" style={{ background: hex((stop as Gradient['stops'][number]).color) }} aria-label="Stop color" onClick={() => setPicking(true)} />
+              <button
+                className="lp-swatch"
+                style={{ background: hex((stop as Gradient['stops'][number]).color) }}
+                aria-label="Stop color"
+                onClick={() => setPicking(true)}
+              />
             </>
           ) : (
             <NumberField

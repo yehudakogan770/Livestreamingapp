@@ -17,7 +17,9 @@ const adjustments = (prefix: string): MenuEntry[] => {
 };
 
 function filterMenus(): MenuEntry[] {
-  return FILTER_MENUS.map((m) => ({ label: m, items: FILTERS.filter((f) => !f.hidden && f.menu === m).map((f) => `filter.${f.id}`) })).filter((m) => m.items.length);
+  return FILTER_MENUS.map((m) => ({ label: m, items: FILTERS.filter((f) => !f.hidden && f.menu === m).map((f) => `filter.${f.id}`) })).filter(
+    (m) => m.items.length,
+  );
 }
 
 export const MENUS: Menu[] = [
@@ -81,7 +83,17 @@ export const MENUS: Menu[] = [
       '-',
       {
         label: 'Adjustments',
-        items: [...adjustments('image.adj.'), '-', 'image.shadowsHighlights', 'image.hdrToning', '-', 'image.desaturate', 'image.matchColor', 'image.replaceColor', 'image.equalize'],
+        items: [
+          ...adjustments('image.adj.'),
+          '-',
+          'image.shadowsHighlights',
+          'image.hdrToning',
+          '-',
+          'image.desaturate',
+          'image.matchColor',
+          'image.replaceColor',
+          'image.equalize',
+        ],
       },
       '-',
       'image.autoTone',
@@ -113,7 +125,20 @@ export const MENUS: Menu[] = [
       { label: 'New Fill Layer', items: ['layer.fillSolid', 'layer.fillGradient', 'layer.fillPattern'] },
       { label: 'New Adjustment Layer', items: adjustments('layer.adj.') },
       '-',
-      { label: 'Layer Mask', items: ['layer.maskReveal', 'layer.maskHide', 'layer.maskSelection', 'layer.maskHideSelection', '-', 'layer.maskDelete', 'layer.maskApply', '-', 'layer.maskToggle'] },
+      {
+        label: 'Layer Mask',
+        items: [
+          'layer.maskReveal',
+          'layer.maskHide',
+          'layer.maskSelection',
+          'layer.maskHideSelection',
+          '-',
+          'layer.maskDelete',
+          'layer.maskApply',
+          '-',
+          'layer.maskToggle',
+        ],
+      },
       'layer.clip',
       '-',
       { label: 'Smart Objects', items: ['layer.toSmart'] },
@@ -123,7 +148,10 @@ export const MENUS: Menu[] = [
       'layer.ungroup',
       '-',
       { label: 'Arrange', items: ['layer.front', 'layer.forward', 'layer.backward', 'layer.back'] },
-      { label: 'Align', items: ['layer.alignTop', 'layer.alignVCenter', 'layer.alignBottom', '-', 'layer.alignLeft', 'layer.alignHCenter', 'layer.alignRight'] },
+      {
+        label: 'Align',
+        items: ['layer.alignTop', 'layer.alignVCenter', 'layer.alignBottom', '-', 'layer.alignLeft', 'layer.alignHCenter', 'layer.alignRight'],
+      },
       '-',
       'layer.mergeDown',
       'layer.mergeVisible',

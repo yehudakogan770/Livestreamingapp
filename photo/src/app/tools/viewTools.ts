@@ -111,7 +111,15 @@ export const rotateViewTool: Tool = {
       requestFrame();
       return;
     }
-    start = { sx: e.sx, sy: e.sy, cx: s.view.cx, cy: s.view.cy, zoom: s.view.zoom, rotation: s.view.rotation, angle: Math.atan2(e.sy - s.view.cy, e.sx - s.view.cx) };
+    start = {
+      sx: e.sx,
+      sy: e.sy,
+      cx: s.view.cx,
+      cy: s.view.cy,
+      zoom: s.view.zoom,
+      rotation: s.view.rotation,
+      angle: Math.atan2(e.sy - s.view.cy, e.sx - s.view.cx),
+    };
   },
   move: (e: ToolEvent) => {
     const s = current();

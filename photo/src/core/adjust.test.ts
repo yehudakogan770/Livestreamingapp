@@ -117,7 +117,17 @@ describe('adjustments', () => {
 
   it('the GPU tables match the exact functions', () => {
     const cases: [keyof ParamsMap, unknown][] = [
-      ['curves', { ...defaultParams('curves'), rgb: [[0, 0], [0.3, 0.45], [1, 1]] }],
+      [
+        'curves',
+        {
+          ...defaultParams('curves'),
+          rgb: [
+            [0, 0],
+            [0.3, 0.45],
+            [1, 1],
+          ],
+        },
+      ],
       ['hueSaturation', { ...defaultParams('hueSaturation'), master: { hue: 30, sat: 20, light: 5 } }],
       ['colorBalance', { ...defaultParams('colorBalance'), midtones: [20, -10, 15] }],
       ['vibrance', { vibrance: 40, saturation: 10 }],

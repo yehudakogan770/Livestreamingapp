@@ -285,7 +285,11 @@ export class Compositor {
         seen.add(l.id);
         const vis = shown && l.visible && !ov.hide?.has(l.id);
         const xf = ov.transforms?.get(l.id);
-        const off = this.offsetOf(l, ov).join(',') + (ov.rasters?.has(l.id) ? `:r${ov.rasters.get(l.id)!.id}` : '') + (vis ? '' : ':h') + (xf ? `:x${xf.inv.map((v) => v.toFixed(5)).join(',')}:${xf.raster?.id ?? ''}` : '');
+        const off =
+          this.offsetOf(l, ov).join(',') +
+          (ov.rasters?.has(l.id) ? `:r${ov.rasters.get(l.id)!.id}` : '') +
+          (vis ? '' : ':h') +
+          (xf ? `:x${xf.inv.map((v) => v.toFixed(5)).join(',')}:${xf.raster?.id ?? ''}` : '');
         const prev = this.prev.get(l.id);
         let b: Rect | null | undefined;
         const bounds = () => (b === undefined ? (b = vis ? this.extent(l, ov) : null) : b);
@@ -406,7 +410,10 @@ export class Compositor {
     this.ensureMips();
     const t = this.gpu.fxTarget('thumb', w, h);
     const p = this.gpu.program('resample');
-    p.tex('uSrc', this.comp.tex).v2('uSrcSize', this.w, this.h).f('uRatio', 1 / s).i('uChan', 2);
+    p.tex('uSrc', this.comp.tex)
+      .v2('uSrcSize', this.w, this.h)
+      .f('uRatio', 1 / s)
+      .i('uChan', 2);
     drawInto(gl, t, 0, 0, w, h);
     const data = new Uint8Array(w * h * 4);
     if (t.internal === gl.RGBA8) gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data);
@@ -421,7 +428,8 @@ export class Compositor {
   }
 
   private chunkSize(doc: Doc, ov: Overrides): number {
-    const styled = (layers: Layer[]): boolean => layers.some((l) => (l.visible && !ov.hide?.has(l.id) && hasStyles(l.styles)) || (l.kind === 'group' && styled(l.children)));
+    const styled = (layers: Layer[]): boolean =>
+      layers.some((l) => (l.visible && !ov.hide?.has(l.id) && hasStyles(l.styles)) || (l.kind === 'group' && styled(l.children)));
     return Math.min(this.gpu.caps.maxTexture, styled(doc.layers) ? CH_FX : CH);
   }
 
@@ -575,7 +583,10 @@ export class Compositor {
       p.i('uSrcKind', 2).tex('uRamp', this.rampTex(key, gradientRamp(f.gradient, 256, f.reverse)));
       const style = ['linear', 'radial', 'angle', 'reflected', 'diamond'].indexOf(f.style);
       const [x0, y0, x1, y1] = gradientEnds(f, doc);
-      p.i('uGradStyle', style).v2('uG0', x0, y0).v2('uG1', x1, y1).i('uDither', this.depth === 8 && f.dither !== false ? 1 : 0);
+      p.i('uGradStyle', style)
+        .v2('uG0', x0, y0)
+        .v2('uG1', x1, y1)
+        .i('uDither', this.depth === 8 && f.dither !== false ? 1 : 0);
     }
   }
 
@@ -596,7 +607,10 @@ export class Compositor {
     p.i('uSrcKind', 4).tex('uFloat', src.tex).iv2('uFloatOrigin', c.x, c.y).iv2('uFloatSize', c.w, c.h);
     if (withMask) this.maskUniforms(p, doc, l);
     else p.i('uHasMask', 0).i('uHasVMask', 0);
-    p.f('uAlpha', alpha).i('uMode', mode).i('uPreserve', preserve ? 1 : 0).i('uDither', 0);
+    p.f('uAlpha', alpha)
+      .i('uMode', mode)
+      .i('uPreserve', preserve ? 1 : 0)
+      .i('uDither', 0);
     this.finishLayer(p, lv, c);
   }
 
@@ -626,7 +640,9 @@ export class Compositor {
         drawInto(gl, sub.t[0]!, 0, 0, c.w, c.h);
         this.drawList(doc, ov, l.children, lv + 1, c);
         const p = this.gpu.program('mix', this.depth);
-        p.tex('uBefore', this.front(lv).tex).tex('uAfter', this.front(lv + 1).tex).iv2('uOrigin', c.x, c.y);
+        p.tex('uBefore', this.front(lv).tex)
+          .tex('uAfter', this.front(lv + 1).tex)
+          .iv2('uOrigin', c.x, c.y);
         this.maskUniforms(p, doc, l);
         p.f('uAlpha', l.opacity);
         this.fill(p, ['uBefore', 'uAfter', 'uVMask', 'uMask']);
@@ -654,7 +670,9 @@ export class Compositor {
     p.tex('uBack', this.front(lv).tex).iv2('uOrigin', c.x, c.y).i('uBackEmpty', 0);
     this.sourceUniforms(p, doc, ov, l);
     this.maskUniforms(p, doc, l);
-    p.f('uAlpha', l.opacity * l.fill).i('uMode', blendIndex(l.blend)).i('uPreserve', preserve ? 1 : 0);
+    p.f('uAlpha', l.opacity * l.fill)
+      .i('uMode', blendIndex(l.blend))
+      .i('uPreserve', preserve ? 1 : 0);
     if (l.kind !== 'fill') p.i('uDither', 0);
     this.finishLayer(p, lv, c);
   }
@@ -699,7 +717,9 @@ export class Compositor {
     if (cached.c.kind === 'threshold') p.f('uThreshold', cached.c.level);
     if (cached.c.kind === 'identity') {
       // Identity table with a blend mode: a 2-entry ramp 0..1.
-      p.tex('uLut1', this.rampTex('identity', new Float32Array([0, 0, 0, 1, 1, 1, 1, 1]))).i('uLut1N', 2).i('uKind', 1);
+      p.tex('uLut1', this.rampTex('identity', new Float32Array([0, 0, 0, 1, 1, 1, 1, 1])))
+        .i('uLut1N', 2)
+        .i('uKind', 1);
     }
     p.i('uLinear', doc.depth === 32 ? 1 : 0);
     this.maskUniforms(p, doc, l);
@@ -762,12 +782,32 @@ export class Compositor {
       const d = st.dropShadow;
       const b = blur(sig(d.size, d.spread), false);
       const [sx, sy] = shift(d.angle, d.distance);
-      fx(1, (p) => p.v3('uColor', ...d.color).f('uOpacity', d.opacity * op).i('uMode', blendIndex(d.blend)).f('uSpread', d.spread).v2('uShift', sx, sy).i('uFlag', d.knockout ? 1 : 0), b);
+      fx(
+        1,
+        (p) =>
+          p
+            .v3('uColor', ...d.color)
+            .f('uOpacity', d.opacity * op)
+            .i('uMode', blendIndex(d.blend))
+            .f('uSpread', d.spread)
+            .v2('uShift', sx, sy)
+            .i('uFlag', d.knockout ? 1 : 0),
+        b,
+      );
     }
     if (st.outerGlow?.on) {
       const g = st.outerGlow;
       const b = blur(sig(g.size, g.spread), false);
-      fx(2, (p) => p.v3('uColor', ...g.color).f('uOpacity', g.opacity * op).i('uMode', blendIndex(g.blend)).f('uSpread', g.spread), b);
+      fx(
+        2,
+        (p) =>
+          p
+            .v3('uColor', ...g.color)
+            .f('uOpacity', g.opacity * op)
+            .i('uMode', blendIndex(g.blend))
+            .f('uSpread', g.spread),
+        b,
+      );
     }
     // The layer's own pixels (with Fill).
     {
@@ -775,14 +815,25 @@ export class Compositor {
       p.tex('uBack', this.front(lv).tex).iv2('uOrigin', c.x, c.y).i('uBackEmpty', 0);
       p.i('uSrcKind', 4).tex('uFloat', S.tex).iv2('uFloatOrigin', E.x, E.y).iv2('uFloatSize', E.w, E.h);
       p.i('uHasMask', 0).i('uHasVMask', 0);
-      p.f('uAlpha', op * l.fill).i('uMode', blendIndex(l.blend)).i('uPreserve', preserve ? 1 : 0).i('uDither', 0);
+      p.f('uAlpha', op * l.fill)
+        .i('uMode', blendIndex(l.blend))
+        .i('uPreserve', preserve ? 1 : 0)
+        .i('uDither', 0);
       this.finishLayer(p, lv, c);
     }
     const bounds = this.extent({ ...l, styles: undefined } as Layer, ov) ?? c;
     if (st.patternOverlay?.on) {
       const po = st.patternOverlay;
       const t = this.patternTex(po.pattern);
-      fx(8, (p) => p.tex('uPattern', t.tex).iv2('uPatSize', t.w, t.h).f('uPatScale', po.scale).v2('uPatOffset', 0, 0).f('uOpacity', po.opacity * op).i('uMode', blendIndex(po.blend)));
+      fx(8, (p) =>
+        p
+          .tex('uPattern', t.tex)
+          .iv2('uPatSize', t.w, t.h)
+          .f('uPatScale', po.scale)
+          .v2('uPatOffset', 0, 0)
+          .f('uOpacity', po.opacity * op)
+          .i('uMode', blendIndex(po.blend)),
+      );
     }
     if (st.gradientOverlay?.on) {
       const g = st.gradientOverlay;
@@ -804,24 +855,60 @@ export class Compositor {
     }
     if (st.colorOverlay?.on) {
       const co = st.colorOverlay;
-      fx(6, (p) => p.v3('uColor', ...co.color).f('uOpacity', co.opacity * op).i('uMode', blendIndex(co.blend)));
+      fx(6, (p) =>
+        p
+          .v3('uColor', ...co.color)
+          .f('uOpacity', co.opacity * op)
+          .i('uMode', blendIndex(co.blend)),
+      );
     }
     if (st.satin?.on) {
       const s = st.satin;
       const b = blur(Math.max(0.3, s.size / 2), false);
       const [sx, sy] = shift(s.angle, s.distance);
-      fx(5, (p) => p.v3('uColor', ...s.color).f('uOpacity', s.opacity * op).i('uMode', blendIndex(s.blend)).v2('uShift', sx, sy).v2('uShift2', -sx, -sy).i('uFlag', s.invert ? 1 : 0), b);
+      fx(
+        5,
+        (p) =>
+          p
+            .v3('uColor', ...s.color)
+            .f('uOpacity', s.opacity * op)
+            .i('uMode', blendIndex(s.blend))
+            .v2('uShift', sx, sy)
+            .v2('uShift2', -sx, -sy)
+            .i('uFlag', s.invert ? 1 : 0),
+        b,
+      );
     }
     if (st.innerGlow?.on) {
       const g = st.innerGlow;
       const b = blur(sig(g.size, g.spread), true);
-      fx(4, (p) => p.v3('uColor', ...g.color).f('uOpacity', g.opacity * op).i('uMode', blendIndex(g.blend)).f('uSpread', g.spread).i('uFlag', g.source === 'center' ? 1 : 0), b);
+      fx(
+        4,
+        (p) =>
+          p
+            .v3('uColor', ...g.color)
+            .f('uOpacity', g.opacity * op)
+            .i('uMode', blendIndex(g.blend))
+            .f('uSpread', g.spread)
+            .i('uFlag', g.source === 'center' ? 1 : 0),
+        b,
+      );
     }
     if (st.innerShadow?.on) {
       const d = st.innerShadow;
       const b = blur(sig(d.size, d.spread), true);
       const [sx, sy] = shift(d.angle, d.distance);
-      fx(3, (p) => p.v3('uColor', ...d.color).f('uOpacity', d.opacity * op).i('uMode', blendIndex(d.blend)).f('uSpread', d.spread).v2('uShift', sx, sy), b);
+      fx(
+        3,
+        (p) =>
+          p
+            .v3('uColor', ...d.color)
+            .f('uOpacity', d.opacity * op)
+            .i('uMode', blendIndex(d.blend))
+            .f('uSpread', d.spread)
+            .v2('uShift', sx, sy),
+        b,
+      );
     }
     if (st.stroke?.on) {
       const s = st.stroke;
@@ -884,7 +971,7 @@ export class Compositor {
       src = t;
       chan = 2;
     }
-    while ((1 << level) < scale) {
+    while (1 << level < scale) {
       level++;
       const nw = Math.ceil(E.w / (1 << level)),
         nh = Math.ceil(E.h / (1 << level));

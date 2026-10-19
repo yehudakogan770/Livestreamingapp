@@ -3,7 +3,18 @@
 import type { ToolId } from '../toolDefs';
 import type { Tool } from './types';
 import { handTool, zoomTool, rotateViewTool } from './viewTools';
-import { marqueeRectTool, marqueeEllipseTool, marqueeRowTool, marqueeColumnTool, lassoTool, polyLassoTool, magneticLassoTool, magicWandTool, quickSelectTool, objectSelectTool } from './selectTools';
+import {
+  marqueeRectTool,
+  marqueeEllipseTool,
+  marqueeRowTool,
+  marqueeColumnTool,
+  lassoTool,
+  polyLassoTool,
+  magneticLassoTool,
+  magicWandTool,
+  quickSelectTool,
+  objectSelectTool,
+} from './selectTools';
 import {
   brushTool,
   pencilTool,
@@ -29,7 +40,22 @@ import {
 import { moveTool, transformTool, isTransforming } from './transform';
 import { eyedropperTool, colorSamplerTool, rulerTool, gradientTool, bucketTool } from './miscTools';
 import { cropTool, perspectiveCropTool, sliceTool, artboardTool } from './cropTools';
-import { penTool, freeformPenTool, curvaturePenTool, addAnchorTool, deleteAnchorTool, convertPointTool, pathSelectTool, directSelectTool, rectTool, ellipseTool, triangleTool, polygonTool, lineTool, customShapeTool } from './vectorTools';
+import {
+  penTool,
+  freeformPenTool,
+  curvaturePenTool,
+  addAnchorTool,
+  deleteAnchorTool,
+  convertPointTool,
+  pathSelectTool,
+  directSelectTool,
+  rectTool,
+  ellipseTool,
+  triangleTool,
+  polygonTool,
+  lineTool,
+  customShapeTool,
+} from './vectorTools';
 import { typeTool } from './typeTool';
 import { patchTool } from './patchTool';
 

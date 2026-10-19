@@ -78,7 +78,12 @@ function thumb(doc: Doc): string {
   try {
     const s = Math.min(1, 240 / Math.max(doc.width, doc.height));
     const px = flatten(doc, canvasRect(doc));
-    const small = resize({ w: doc.width, h: doc.height, c: 4, data: px }, Math.max(1, Math.round(doc.width * s)), Math.max(1, Math.round(doc.height * s)), 'bilinear');
+    const small = resize(
+      { w: doc.width, h: doc.height, c: 4, data: px },
+      Math.max(1, Math.round(doc.width * s)),
+      Math.max(1, Math.round(doc.height * s)),
+      'bilinear',
+    );
     const c = document.createElement('canvas');
     c.width = small.w;
     c.height = small.h;

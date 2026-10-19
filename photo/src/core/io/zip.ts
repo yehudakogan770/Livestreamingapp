@@ -31,7 +31,25 @@ export async function zip(entries: ZipEntry[]): Promise<Uint8Array> {
     const local = new Writer(30 + name.length, true);
     local.u32(0x04034b50).u16(20).u16(0x0800).u16(method).u16(0).u16(0x21).u32(crc).u32(body.length).u32(e.data.length).u16(name.length).u16(0).bytes(name);
     parts.push(local.result(), body);
-    central.u32(0x02014b50).u16(20).u16(20).u16(0x0800).u16(method).u16(0).u16(0x21).u32(crc).u32(body.length).u32(e.data.length).u16(name.length).u16(0).u16(0).u16(0).u16(0).u32(0).u32(offset).bytes(name);
+    central
+      .u32(0x02014b50)
+      .u16(20)
+      .u16(20)
+      .u16(0x0800)
+      .u16(method)
+      .u16(0)
+      .u16(0x21)
+      .u32(crc)
+      .u32(body.length)
+      .u32(e.data.length)
+      .u16(name.length)
+      .u16(0)
+      .u16(0)
+      .u16(0)
+      .u16(0)
+      .u32(0)
+      .u32(offset)
+      .bytes(name);
     offset += 30 + name.length + body.length;
     if (offset > 0xfffffff0) throw new Error('This file is larger than 4 GB, which a .zip without ZIP64 cannot hold.');
   }

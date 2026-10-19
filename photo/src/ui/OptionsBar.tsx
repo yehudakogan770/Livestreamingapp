@@ -1,7 +1,18 @@
 // The options bar: the current tool's settings (and Free Transform's numbers
 // while it runs).
 
-import { Check as CheckIcon, X, SquarePlus, SquareMinus, SquareStack, Square as SquareIcon, AlignLeft, AlignCenter, AlignRight, AlignJustify } from 'lucide-react';
+import {
+  Check as CheckIcon,
+  X,
+  SquarePlus,
+  SquareMinus,
+  SquareStack,
+  Square as SquareIcon,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+} from 'lucide-react';
 import { app, setOpts, useApp, openDialog, bump } from '../app/state';
 import { toolDef, type ToolOptions, type BrushTip } from '../app/toolDefs';
 import { NumberField, Select, Check, Seg, ColorWell } from './fields';
@@ -30,7 +41,9 @@ function Sep() {
 }
 
 function Pct({ label, value, onChange, title }: { label: string; value: number; onChange: (v: number) => void; title?: string }) {
-  return <NumberField label={label} title={title} value={Math.round(value * 100)} min={0} max={100} suffix="%" width={44} onChange={(v) => onChange(v / 100)} />;
+  return (
+    <NumberField label={label} title={title} value={Math.round(value * 100)} min={0} max={100} suffix="%" width={44} onChange={(v) => onChange(v / 100)} />
+  );
 }
 
 function TipFields({ tip, set }: { tip: BrushTip; set: (t: Partial<BrushTip>) => void }) {
@@ -114,7 +127,17 @@ export function OptionsBar() {
         body = (
           <>
             <Check label="Auto-Select" checked={o.move.autoSelect} onChange={(v) => sel('move')({ autoSelect: v })} />
-            <Select value={o.move.autoSelectGroups ? 'group' : 'layer'} options={[['layer', 'Layer'], ['group', 'Group']] as const} onChange={(v) => sel('move')({ autoSelectGroups: v === 'group' })} title="Auto-select what" />
+            <Select
+              value={o.move.autoSelectGroups ? 'group' : 'layer'}
+              options={
+                [
+                  ['layer', 'Layer'],
+                  ['group', 'Group'],
+                ] as const
+              }
+              onChange={(v) => sel('move')({ autoSelectGroups: v === 'group' })}
+              title="Auto-select what"
+            />
             <Check label="Show Transform Controls" checked={o.move.showTransform} onChange={(v) => sel('move')({ showTransform: v })} />
             <Sep />
             {(
@@ -154,8 +177,18 @@ export function OptionsBar() {
         body = (
           <>
             <SelectionOps op={o.selection.op} set={(op) => sel('selection')({ op })} />
-            <NumberField label="Feather" value={o.selection.feather} min={0} max={1000} suffix="px" width={44} onChange={(v) => sel('selection')({ feather: v })} />
-            {tool !== 'marqueeRect' && tool !== 'marqueeRow' && tool !== 'marqueeColumn' && <Check label="Anti-alias" checked={o.selection.antialias} onChange={(v) => sel('selection')({ antialias: v })} />}
+            <NumberField
+              label="Feather"
+              value={o.selection.feather}
+              min={0}
+              max={1000}
+              suffix="px"
+              width={44}
+              onChange={(v) => sel('selection')({ feather: v })}
+            />
+            {tool !== 'marqueeRect' && tool !== 'marqueeRow' && tool !== 'marqueeColumn' && (
+              <Check label="Anti-alias" checked={o.selection.antialias} onChange={(v) => sel('selection')({ antialias: v })} />
+            )}
             {(tool === 'marqueeRect' || tool === 'marqueeEllipse') && (
               <>
                 <Select
@@ -170,8 +203,24 @@ export function OptionsBar() {
                 />
                 {o.selection.style !== 'normal' && (
                   <>
-                    <NumberField label="W" value={o.selection.w} min={0.01} max={30000} digits={o.selection.style === 'fixedRatio' ? 2 : 0} width={52} onChange={(v) => sel('selection')({ w: v })} />
-                    <NumberField label="H" value={o.selection.h} min={0.01} max={30000} digits={o.selection.style === 'fixedRatio' ? 2 : 0} width={52} onChange={(v) => sel('selection')({ h: v })} />
+                    <NumberField
+                      label="W"
+                      value={o.selection.w}
+                      min={0.01}
+                      max={30000}
+                      digits={o.selection.style === 'fixedRatio' ? 2 : 0}
+                      width={52}
+                      onChange={(v) => sel('selection')({ w: v })}
+                    />
+                    <NumberField
+                      label="H"
+                      value={o.selection.h}
+                      min={0.01}
+                      max={30000}
+                      digits={o.selection.style === 'fixedRatio' ? 2 : 0}
+                      width={52}
+                      onChange={(v) => sel('selection')({ h: v })}
+                    />
                   </>
                 )}
               </>
@@ -257,7 +306,12 @@ export function OptionsBar() {
               </>
             )}
             <Sep />
-            <button className="lp-btn" aria-pressed={o.crop.straighten} onClick={() => sel('crop')({ straighten: !o.crop.straighten })} title="Draw a line along what should be level">
+            <button
+              className="lp-btn"
+              aria-pressed={o.crop.straighten}
+              onClick={() => sel('crop')({ straighten: !o.crop.straighten })}
+              title="Draw a line along what should be level"
+            >
               Straighten
             </button>
             <Select
@@ -273,7 +327,12 @@ export function OptionsBar() {
               onChange={(v) => sel('crop')({ overlay: v })}
             />
             <Check label="Delete Cropped Pixels" checked={o.crop.deleteCropped} onChange={(v) => sel('crop')({ deleteCropped: v })} />
-            <Check label="Content-Aware" checked={o.crop.contentAware} onChange={(v) => sel('crop')({ contentAware: v })} title="Fill new edges (from straightening or growing the canvas) from the picture" />
+            <Check
+              label="Content-Aware"
+              checked={o.crop.contentAware}
+              onChange={(v) => sel('crop')({ contentAware: v })}
+              title="Fill new edges (from straightening or growing the canvas) from the picture"
+            />
             {cropActive() && (
               <>
                 <span style={{ flex: 1 }} />
@@ -332,7 +391,15 @@ export function OptionsBar() {
             <>
               <TipFields tip={b.tip} set={(t) => sel(k)({ tip: { ...b.tip, ...t } })} />
               <Sep />
-              <Select label="Mode" value={b.mode} options={blendOptions([['behind', 'Behind'], ['clear', 'Clear']])} onChange={(v) => sel(k)({ mode: v as PaintMode })} />
+              <Select
+                label="Mode"
+                value={b.mode}
+                options={blendOptions([
+                  ['behind', 'Behind'],
+                  ['clear', 'Clear'],
+                ])}
+                onChange={(v) => sel(k)({ mode: v as PaintMode })}
+              />
               <Pct label="Opacity" value={b.opacity} onChange={(v) => sel(k)({ opacity: v })} />
               {k === 'brush' && <Pct label="Flow" value={o.brush.flow} onChange={(v) => sel('brush')({ flow: v })} />}
               {k === 'brush' && <Check label="Airbrush" checked={o.brush.airbrush} onChange={(v) => sel('brush')({ airbrush: v })} />}
@@ -378,7 +445,15 @@ export function OptionsBar() {
               ]}
               onChange={(v) => sel('bgEraser')({ limits: v })}
             />
-            <NumberField label="Tolerance" value={o.bgEraser.tolerance} min={0} max={100} suffix="%" width={44} onChange={(v) => sel('bgEraser')({ tolerance: v })} />
+            <NumberField
+              label="Tolerance"
+              value={o.bgEraser.tolerance}
+              min={0}
+              max={100}
+              suffix="%"
+              width={44}
+              onChange={(v) => sel('bgEraser')({ tolerance: v })}
+            />
             <Check label="Protect Foreground Color" checked={o.bgEraser.protectFg} onChange={(v) => sel('bgEraser')({ protectFg: v })} />
           </>
         );
@@ -386,7 +461,14 @@ export function OptionsBar() {
       case 'magicEraser':
         body = (
           <>
-            <NumberField label="Tolerance" value={o.magicEraser.tolerance} min={0} max={255} width={44} onChange={(v) => sel('magicEraser')({ tolerance: v })} />
+            <NumberField
+              label="Tolerance"
+              value={o.magicEraser.tolerance}
+              min={0}
+              max={255}
+              width={44}
+              onChange={(v) => sel('magicEraser')({ tolerance: v })}
+            />
             <Check label="Anti-alias" checked={o.magicEraser.antialias} onChange={(v) => sel('magicEraser')({ antialias: v })} />
             <Check label="Contiguous" checked={o.magicEraser.contiguous} onChange={(v) => sel('magicEraser')({ contiguous: v })} />
             <Check label="Sample All Layers" checked={o.magicEraser.allLayers} onChange={(v) => sel('magicEraser')({ allLayers: v })} />
@@ -424,7 +506,15 @@ export function OptionsBar() {
               ]}
               onChange={(v) => sel('colorReplace')({ mode: v })}
             />
-            <NumberField label="Tolerance" value={o.colorReplace.tolerance} min={0} max={100} suffix="%" width={44} onChange={(v) => sel('colorReplace')({ tolerance: v })} />
+            <NumberField
+              label="Tolerance"
+              value={o.colorReplace.tolerance}
+              min={0}
+              max={100}
+              suffix="%"
+              width={44}
+              onChange={(v) => sel('colorReplace')({ tolerance: v })}
+            />
           </>
         );
         break;
@@ -458,7 +548,12 @@ export function OptionsBar() {
             <Sep />
             <Pct label="Opacity" value={o.pattern.opacity} onChange={(v) => sel('pattern')({ opacity: v })} />
             <Pct label="Flow" value={o.pattern.flow} onChange={(v) => sel('pattern')({ flow: v })} />
-            <Select label="Pattern" value={o.pattern.pattern} options={allPatterns().map((p) => [p.id, p.name] as [string, string])} onChange={(v) => sel('pattern')({ pattern: v })} />
+            <Select
+              label="Pattern"
+              value={o.pattern.pattern}
+              options={allPatterns().map((p) => [p.id, p.name] as [string, string])}
+              onChange={(v) => sel('pattern')({ pattern: v })}
+            />
             <Check label="Aligned" checked={o.pattern.aligned} onChange={(v) => sel('pattern')({ aligned: v })} />
           </>
         );
@@ -559,7 +654,9 @@ export function OptionsBar() {
                 onChange={(v) => sel('patch')({ source: v === 'source' })}
               />
             )}
-            {o.patch.mode === 'contentAware' && <NumberField label="Structure" value={o.patch.structure} min={1} max={7} width={36} onChange={(v) => sel('patch')({ structure: v })} />}
+            {o.patch.mode === 'contentAware' && (
+              <NumberField label="Structure" value={o.patch.structure} min={1} max={7} width={36} onChange={(v) => sel('patch')({ structure: v })} />
+            )}
           </>
         );
         break;
@@ -574,7 +671,12 @@ export function OptionsBar() {
       case 'gradient':
         body = (
           <>
-            <Select label="Gradient" value={o.gradient.preset} options={GRADIENT_CHOICES.map((n, i) => [i, n] as [number, string])} onChange={(v) => sel('gradient')({ preset: v })} />
+            <Select
+              label="Gradient"
+              value={o.gradient.preset}
+              options={GRADIENT_CHOICES.map((n, i) => [i, n] as [number, string])}
+              onChange={(v) => sel('gradient')({ preset: v })}
+            />
             <Seg
               label="Gradient style"
               value={o.gradient.style}
@@ -592,7 +694,12 @@ export function OptionsBar() {
             <Pct label="Opacity" value={o.gradient.opacity} onChange={(v) => sel('gradient')({ opacity: v })} />
             <Check label="Reverse" checked={o.gradient.reverse} onChange={(v) => sel('gradient')({ reverse: v })} />
             <Check label="Dither" checked={o.gradient.dither} onChange={(v) => sel('gradient')({ dither: v })} />
-            <Check label="As Gradient Layer" checked={o.gradient.asLayer} onChange={(v) => sel('gradient')({ asLayer: v })} title="Make an editable gradient fill layer instead of painting pixels" />
+            <Check
+              label="As Gradient Layer"
+              checked={o.gradient.asLayer}
+              onChange={(v) => sel('gradient')({ asLayer: v })}
+              title="Make an editable gradient fill layer instead of painting pixels"
+            />
           </>
         );
         break;
@@ -608,7 +715,14 @@ export function OptionsBar() {
               ]}
               onChange={(v) => sel('bucket')({ source: v })}
             />
-            {o.bucket.source === 'pattern' && <Select value={o.bucket.pattern} title="Pattern" options={allPatterns().map((p) => [p.id, p.name] as [string, string])} onChange={(v) => sel('bucket')({ pattern: v })} />}
+            {o.bucket.source === 'pattern' && (
+              <Select
+                value={o.bucket.pattern}
+                title="Pattern"
+                options={allPatterns().map((p) => [p.id, p.name] as [string, string])}
+                onChange={(v) => sel('bucket')({ pattern: v })}
+              />
+            )}
             <Select label="Mode" value={o.bucket.mode} options={blendOptions()} onChange={(v) => sel('bucket')({ mode: v as BlendMode })} />
             <Pct label="Opacity" value={o.bucket.opacity} onChange={(v) => sel('bucket')({ opacity: v })} />
             <NumberField label="Tolerance" value={o.bucket.tolerance} min={0} max={255} width={44} onChange={(v) => sel('bucket')({ tolerance: v })} />
@@ -727,24 +841,65 @@ export function OptionsBar() {
               <>
                 <span className="lp-opt">
                   <span>Fill</span>
-                  {o.shape.fill ? <ColorWell color={o.shape.fill} title="Fill color" onClick={() => openDialog('colorPicker', { target: 'shapeFill' })} /> : <button className="lp-btn" onClick={() => sel('shape')({ fill: app.get().fg })}>None</button>}
+                  {o.shape.fill ? (
+                    <ColorWell color={o.shape.fill} title="Fill color" onClick={() => openDialog('colorPicker', { target: 'shapeFill' })} />
+                  ) : (
+                    <button className="lp-btn" onClick={() => sel('shape')({ fill: app.get().fg })}>
+                      None
+                    </button>
+                  )}
                 </span>
                 <span className="lp-opt">
                   <span>Stroke</span>
-                  {o.shape.stroke ? <ColorWell color={o.shape.stroke} title="Stroke color" onClick={() => openDialog('colorPicker', { target: 'shapeStroke' })} /> : <button className="lp-btn" onClick={() => sel('shape')({ stroke: app.get().fg })}>None</button>}
+                  {o.shape.stroke ? (
+                    <ColorWell color={o.shape.stroke} title="Stroke color" onClick={() => openDialog('colorPicker', { target: 'shapeStroke' })} />
+                  ) : (
+                    <button className="lp-btn" onClick={() => sel('shape')({ stroke: app.get().fg })}>
+                      None
+                    </button>
+                  )}
                 </span>
-                {o.shape.stroke && <NumberField value={o.shape.strokeWidth} min={0} max={1000} suffix="px" width={40} title="Stroke width" onChange={(v) => sel('shape')({ strokeWidth: v })} />}
+                {o.shape.stroke && (
+                  <NumberField
+                    value={o.shape.strokeWidth}
+                    min={0}
+                    max={1000}
+                    suffix="px"
+                    width={40}
+                    title="Stroke width"
+                    onChange={(v) => sel('shape')({ strokeWidth: v })}
+                  />
+                )}
               </>
             )}
-            {tool === 'rect' && <NumberField label="Radius" value={o.shape.radius} min={0} max={5000} suffix="px" width={44} onChange={(v) => sel('shape')({ radius: v })} />}
+            {tool === 'rect' && (
+              <NumberField label="Radius" value={o.shape.radius} min={0} max={5000} suffix="px" width={44} onChange={(v) => sel('shape')({ radius: v })} />
+            )}
             {tool === 'polygon' && (
               <>
                 <NumberField label="Sides" value={o.shape.sides} min={3} max={100} width={36} onChange={(v) => sel('shape')({ sides: v })} />
                 <Pct label="Star Ratio" value={1 - o.shape.star} onChange={(v) => sel('shape')({ star: 1 - v })} />
               </>
             )}
-            {tool === 'line' && <NumberField label="Weight" value={o.shape.lineWeight} min={1} max={1000} suffix="px" width={44} onChange={(v) => sel('shape')({ lineWeight: v })} />}
-            {tool === 'customShape' && <Select label="Shape" value={o.shape.custom} options={CUSTOM_SHAPES.map((c) => [c.id, c.name] as [string, string])} onChange={(v) => sel('shape')({ custom: v })} />}
+            {tool === 'line' && (
+              <NumberField
+                label="Weight"
+                value={o.shape.lineWeight}
+                min={1}
+                max={1000}
+                suffix="px"
+                width={44}
+                onChange={(v) => sel('shape')({ lineWeight: v })}
+              />
+            )}
+            {tool === 'customShape' && (
+              <Select
+                label="Shape"
+                value={o.shape.custom}
+                options={CUSTOM_SHAPES.map((c) => [c.id, c.name] as [string, string])}
+                onChange={(v) => sel('shape')({ custom: v })}
+              />
+            )}
           </>
         );
         break;
@@ -771,7 +926,15 @@ export function OptionsBar() {
       case 'slice':
       case 'artboard':
       case 'perspectiveCrop':
-        body = <span className="lp-faint">{tool === 'perspectiveCrop' ? 'Click the four corners of what should become a rectangle, then press Enter.' : tool === 'slice' ? 'Drag to make a slice. File ▸ Export ▸ Slices to Files saves each one.' : 'Drag to make an artboard. File ▸ Export ▸ Artboards to Files saves each one.'}</span>;
+        body = (
+          <span className="lp-faint">
+            {tool === 'perspectiveCrop'
+              ? 'Click the four corners of what should become a rectangle, then press Enter.'
+              : tool === 'slice'
+                ? 'Drag to make a slice. File ▸ Export ▸ Slices to Files saves each one.'
+                : 'Drag to make an artboard. File ▸ Export ▸ Artboards to Files saves each one.'}
+          </span>
+        );
         break;
     }
 
@@ -845,7 +1008,14 @@ function TypeOptions() {
         ]}
         onChange={(v) => set({ weight: v })}
       />
-      <button className="lp-icon-btn" aria-pressed={o.italic} title="Italic" aria-label="Italic" onClick={() => set({ italic: !o.italic })} style={{ fontStyle: 'italic', fontWeight: 600 }}>
+      <button
+        className="lp-icon-btn"
+        aria-pressed={o.italic}
+        title="Italic"
+        aria-label="Italic"
+        onClick={() => set({ italic: !o.italic })}
+        style={{ fontStyle: 'italic', fontWeight: 600 }}
+      >
         I
       </button>
       <NumberField value={o.size} min={1} max={5000} digits={1} suffix="px" width={52} title="Font size" onChange={(v) => set({ size: v })} />

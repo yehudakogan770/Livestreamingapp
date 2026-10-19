@@ -12,7 +12,17 @@ import { SRGB } from '../core/color';
 import { Mark } from './Mark';
 
 export function newFromPreset(p: Preset): void {
-  addSession(blankDoc({ name: 'Untitled-1', width: p.width, height: p.height, depth: p.depth ?? 8, resolution: p.resolution, profile: SRGB, background: p.background ?? 'white' }));
+  addSession(
+    blankDoc({
+      name: 'Untitled-1',
+      width: p.width,
+      height: p.height,
+      depth: p.depth ?? 8,
+      resolution: p.resolution,
+      profile: SRGB,
+      background: p.background ?? 'white',
+    }),
+  );
 }
 
 export async function openRecent(r: RecentFile): Promise<void> {
@@ -40,12 +50,23 @@ export async function openRecent(r: RecentFile): Promise<void> {
 
 function PageThumb({ w, h, transparent }: { w: number; h: number; transparent?: boolean }) {
   const k = Math.min(120 / w, 84 / h);
-  return <span className="lp-start-page" style={{ width: Math.max(8, w * k), height: Math.max(8, h * k), background: transparent ? 'repeating-conic-gradient(#d4d4d4 0% 25%, #ffffff 0% 50%) 50% / 8px 8px' : '#fff' }} />;
+  return (
+    <span
+      className="lp-start-page"
+      style={{
+        width: Math.max(8, w * k),
+        height: Math.max(8, h * k),
+        background: transparent ? 'repeating-conic-gradient(#d4d4d4 0% 25%, #ffffff 0% 50%) 50% / 8px 8px' : '#fff',
+      }}
+    />
+  );
 }
 
 export function StartScreen() {
   const [recent, setRecent] = useState(recentFiles());
-  const sizes = PRESETS.filter((p) => ['Photo, 6 × 4 in', 'A4', 'Square post', 'Story', 'HD 1080p', '4K UHD', 'Overlay for Lumora', 'Video thumbnail'].includes(p.name));
+  const sizes = PRESETS.filter((p) =>
+    ['Photo, 6 × 4 in', 'A4', 'Square post', 'Story', 'HD 1080p', '4K UHD', 'Overlay for Lumora', 'Video thumbnail'].includes(p.name),
+  );
   return (
     <div className="lp-start">
       <div className="lp-start-side">

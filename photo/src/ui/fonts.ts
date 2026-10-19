@@ -1,7 +1,16 @@
 // The fonts the Type tool offers: the ones bundled with the app (the same
 // families Lumora, Studio and the Titler have) and common system fonts.
 
-export const BUNDLED_FONTS = ['Inter Variable', 'Bebas Neue', 'Chakra Petch', 'Frank Ruhl Libre', 'Great Vibes', 'Heebo', 'David Libre', 'JetBrains Mono Variable'];
+export const BUNDLED_FONTS = [
+  'Inter Variable',
+  'Bebas Neue',
+  'Chakra Petch',
+  'Frank Ruhl Libre',
+  'Great Vibes',
+  'Heebo',
+  'David Libre',
+  'JetBrains Mono Variable',
+];
 
 const SYSTEM_FONTS = ['Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Verdana', 'Trebuchet MS', 'Segoe UI', 'Helvetica'];
 

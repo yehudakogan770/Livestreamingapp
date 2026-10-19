@@ -52,7 +52,15 @@ function sniff(b: Uint8Array, name: string): string {
   return ext(name);
 }
 
-const MIME: Record<string, string> = { jpeg: 'image/jpeg', webp: 'image/webp', avif: 'image/avif', gif: 'image/gif', bmp: 'image/bmp', heic: 'image/heic', ico: 'image/x-icon' };
+const MIME: Record<string, string> = {
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+  avif: 'image/avif',
+  gif: 'image/gif',
+  bmp: 'image/bmp',
+  heic: 'image/heic',
+  ico: 'image/x-icon',
+};
 
 /** A document from a file's bytes. */
 export async function docFromBytes(name: string, bytes: Uint8Array): Promise<Doc> {
@@ -74,7 +82,8 @@ export async function docFromBytes(name: string, bytes: Uint8Array): Promise<Doc
     let d: Decoded;
     if (kind === 'png') d = await decodePNG(bytes);
     else if (kind === 'tiff') d = await decodeTIFF(bytes);
-    else if (kind === 'gif' || kind === 'bmp' || kind === 'jpeg' || kind === 'webp' || kind === 'avif' || kind === 'heic' || kind === 'ico') d = await decodeWithBrowser(bytes, MIME[kind]!);
+    else if (kind === 'gif' || kind === 'bmp' || kind === 'jpeg' || kind === 'webp' || kind === 'avif' || kind === 'heic' || kind === 'ico')
+      d = await decodeWithBrowser(bytes, MIME[kind]!);
     else throw new Error(`“${name}” is not a picture Lumora Photo can open.`);
     doc = docFromDecoded(base, d);
   }
@@ -139,7 +148,10 @@ const SAVE_FILTERS: Record<string, FileFilter> = {
 export async function previewPNG(doc: Doc, max = 512): Promise<Uint8Array> {
   const s = Math.min(1, max / Math.max(doc.width, doc.height));
   const full = flatten(doc, canvasRect(doc));
-  const small = s < 1 ? resize({ w: doc.width, h: doc.height, c: 4, data: full }, Math.round(doc.width * s), Math.round(doc.height * s), 'bilinear') : { w: doc.width, h: doc.height, c: 4 as const, data: full };
+  const small =
+    s < 1
+      ? resize({ w: doc.width, h: doc.height, c: 4, data: full }, Math.round(doc.width * s), Math.round(doc.height * s), 'bilinear')
+      : { w: doc.width, h: doc.height, c: 4 as const, data: full };
   const px = to8(doc, small.data, true);
   return encodePNG(small.w, small.h, px, { depth: 8, alpha: true });
 }
@@ -188,7 +200,12 @@ export async function save(s: Session | null = current(), saveAs = false): Promi
   const name = `${s.doc.name}.${fmt === 'psd' ? 'psd' : 'lumphoto'}`;
   try {
     const bytes = await busy('Saving…', () => documentBytes(s.doc, known ? fmt : 'lumphoto'));
-    const res = await getHost().saveFile(known ? name : `${s.doc.name}.lumphoto`, bytes, known ? [SAVE_FILTERS[fmt]!] : [SAVE_FILTERS.lumphoto!, SAVE_FILTERS.psd!], known ? { path: s.path, handle: s.handle } : undefined);
+    const res = await getHost().saveFile(
+      known ? name : `${s.doc.name}.lumphoto`,
+      bytes,
+      known ? [SAVE_FILTERS[fmt]!] : [SAVE_FILTERS.lumphoto!, SAVE_FILTERS.psd!],
+      known ? { path: s.path, handle: s.handle } : undefined,
+    );
     if (!res) return false;
     s.path = res.path ?? s.path;
     s.handle = res.handle ?? s.handle;
@@ -224,7 +241,16 @@ export async function saveAsFormat(format: ExportFormat): Promise<void> {
     }
     return;
   }
-  await exportAs({ format, quality: 0.9, scale: 1, depth: s.doc.depth === 8 ? 8 : 16, embedProfile: true, toSrgb: false, transparency: true, background: [1, 1, 1] });
+  await exportAs({
+    format,
+    quality: 0.9,
+    scale: 1,
+    depth: s.doc.depth === 8 ? 8 : 16,
+    embedProfile: true,
+    toSrgb: false,
+    transparency: true,
+    background: [1, 1, 1],
+  });
 }
 
 // ---- export ----
@@ -251,7 +277,17 @@ export interface ExportOptions {
   dither?: boolean;
 }
 
-export const EXPORT_LABEL: Record<ExportFormat, string> = { png: 'PNG', jpeg: 'JPEG', webp: 'WebP', avif: 'AVIF', gif: 'GIF', tiff: 'TIFF', bmp: 'BMP', psd: 'Photoshop', lumphoto: 'Lumora Photo' };
+export const EXPORT_LABEL: Record<ExportFormat, string> = {
+  png: 'PNG',
+  jpeg: 'JPEG',
+  webp: 'WebP',
+  avif: 'AVIF',
+  gif: 'GIF',
+  tiff: 'TIFF',
+  bmp: 'BMP',
+  psd: 'Photoshop',
+  lumphoto: 'Lumora Photo',
+};
 
 export async function exportFormats(): Promise<ExportFormat[]> {
   const list: ExportFormat[] = ['png', 'jpeg', 'webp', 'gif', 'tiff', 'bmp'];
@@ -300,9 +336,20 @@ export async function exportBytes(doc: Doc, o: ExportOptions): Promise<Uint8Arra
   const hasAlpha = !flat && px.some((v, i) => (i & 3) === 3 && v < 1);
   switch (o.format) {
     case 'png':
-      return encodePNG(w, h, o.depth === 16 ? to16(px) : toBytes(px), { depth: o.depth, alpha: hasAlpha, icc, iccName: profile.name, resolution: doc.resolution });
+      return encodePNG(w, h, o.depth === 16 ? to16(px) : toBytes(px), {
+        depth: o.depth,
+        alpha: hasAlpha,
+        icc,
+        iccName: profile.name,
+        resolution: doc.resolution,
+      });
     case 'tiff':
-      return encodeTIFF(w, h, lin ? px : o.depth === 16 ? to16(px) : toBytes(px), { depth: lin ? 32 : o.depth, alpha: hasAlpha, icc, resolution: doc.resolution });
+      return encodeTIFF(w, h, lin ? px : o.depth === 16 ? to16(px) : toBytes(px), {
+        depth: lin ? 32 : o.depth,
+        alpha: hasAlpha,
+        icc,
+        resolution: doc.resolution,
+      });
     case 'jpeg': {
       const jpg = await encodeWithBrowser(w, h, new Uint8ClampedArray(toBytes(px).buffer), 'image/jpeg', o.quality);
       return jpegWithMeta(jpg, profile.id === 'srgb' && !o.embedProfile ? null : (icc ?? null), doc.resolution);
@@ -329,7 +376,17 @@ function toBytes(px: Float32Array): Uint8Array {
   return out;
 }
 
-const EXT: Record<ExportFormat, string> = { png: 'png', jpeg: 'jpg', webp: 'webp', avif: 'avif', gif: 'gif', tiff: 'tif', bmp: 'bmp', psd: 'psd', lumphoto: 'lumphoto' };
+const EXT: Record<ExportFormat, string> = {
+  png: 'png',
+  jpeg: 'jpg',
+  webp: 'webp',
+  avif: 'avif',
+  gif: 'gif',
+  tiff: 'tif',
+  bmp: 'bmp',
+  psd: 'psd',
+  lumphoto: 'lumphoto',
+};
 
 export async function exportAs(o: ExportOptions, name?: string): Promise<boolean> {
   const s = current();
@@ -349,7 +406,16 @@ export async function exportAs(o: ExportOptions, name?: string): Promise<boolean
 /** Quick Export as PNG (File ▸ Export ▸ Quick Export). */
 export function quickExport(): Promise<boolean> {
   const s = current();
-  return exportAs({ format: 'png', quality: 1, scale: 1, depth: 8, embedProfile: true, toSrgb: s?.doc.profile.id !== 'srgb', transparency: true, background: [1, 1, 1] });
+  return exportAs({
+    format: 'png',
+    quality: 1,
+    scale: 1,
+    depth: 8,
+    embedProfile: true,
+    toSrgb: s?.doc.profile.id !== 'srgb',
+    transparency: true,
+    background: [1, 1, 1],
+  });
 }
 
 /** Export every artboard (or slice) as its own file. */

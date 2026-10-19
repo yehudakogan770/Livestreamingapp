@@ -62,7 +62,11 @@ export function gradientRamp(g: Gradient, n = 256, reverse = false): Float32Arra
   return out;
 }
 
-const c3 = (hex: string): [number, number, number] => [parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255];
+const c3 = (hex: string): [number, number, number] => [
+  parseInt(hex.slice(1, 3), 16) / 255,
+  parseInt(hex.slice(3, 5), 16) / 255,
+  parseInt(hex.slice(5, 7), 16) / 255,
+];
 
 const two = (name: string, a: string, b: string, alphaB = 1): Gradient => ({
   name,

@@ -83,19 +83,56 @@ export function PropertiesPanel() {
           [c.inBlack, 0],
           [c.inWhite, 1],
         ];
-        ops.setLayer(al.id, { params: { rgb: [[0, 0], [1, 1]], r: toCurve(lv.r), g: toCurve(lv.g), b: toCurve(lv.b) } } as Partial<Layer>, 'Auto');
+        ops.setLayer(
+          al.id,
+          {
+            params: {
+              rgb: [
+                [0, 0],
+                [1, 1],
+              ],
+              r: toCurve(lv.r),
+              g: toCurve(lv.g),
+              b: toCurve(lv.b),
+            },
+          } as Partial<Layer>,
+          'Auto',
+        );
       }
     };
     window.addEventListener('lp-auto-levels', auto);
     return () => window.removeEventListener('lp-auto-levels', auto);
   }, []);
   if (!s) return <div className="lp-empty">No document</div>;
-  if (!l) return <div className="lp-panel"><DocProps doc={s.doc} /></div>;
+  if (!l)
+    return (
+      <div className="lp-panel">
+        <DocProps doc={s.doc} />
+      </div>
+    );
 
   const maskSection = l.mask && (
     <Section title="Mask">
-      <Slider label="Density" value={l.mask.density} min={0} max={1} step={0.01} scale={100} suffix="%" onChange={(v) => ops.setLayer(l.id, { mask: { ...l.mask!, density: v } }, 'Mask Density', 'mask', true)} />
-      <Slider label="Feather" value={l.mask.feather} min={0} max={250} step={0.1} digits={1} suffix="px" onChange={(v) => ops.setLayer(l.id, { mask: { ...l.mask!, feather: v } }, 'Mask Feather', 'mask', true)} />
+      <Slider
+        label="Density"
+        value={l.mask.density}
+        min={0}
+        max={1}
+        step={0.01}
+        scale={100}
+        suffix="%"
+        onChange={(v) => ops.setLayer(l.id, { mask: { ...l.mask!, density: v } }, 'Mask Density', 'mask', true)}
+      />
+      <Slider
+        label="Feather"
+        value={l.mask.feather}
+        min={0}
+        max={250}
+        step={0.1}
+        digits={1}
+        suffix="px"
+        onChange={(v) => ops.setLayer(l.id, { mask: { ...l.mask!, feather: v } }, 'Mask Feather', 'mask', true)}
+      />
       <div className="lp-panel-row" style={{ flexWrap: 'wrap', marginTop: 6 }}>
         <button className="lp-btn" onClick={() => app.set({ workspace: { kind: 'selectMask', props: { mask: l.id } } })}>
           Select and Mask…
@@ -232,14 +269,29 @@ function FillProps({ id, content }: { id: string; content: FillContent }) {
     return (
       <Section title="Color Fill">
         <div className="lp-panel-row">
-          <ColorWell color={content.color} size={36} title="Fill color" onClick={() => openDialog('colorPicker', { color: content.color.slice(0, 3), onPick: (c: [number, number, number]) => set({ type: 'solid', color: [...c, 1] }, false) })} />
+          <ColorWell
+            color={content.color}
+            size={36}
+            title="Fill color"
+            onClick={() =>
+              openDialog('colorPicker', {
+                color: content.color.slice(0, 3),
+                onPick: (c: [number, number, number]) => set({ type: 'solid', color: [...c, 1] }, false),
+              })
+            }
+          />
         </div>
       </Section>
     );
   if (content.type === 'gradient')
     return (
       <Section title="Gradient Fill">
-        <div className="lp-gradient-bar" style={{ background: gradientCss(content.gradient, content.reverse), cursor: 'pointer', marginBottom: 10 }} title="Edit the gradient" onClick={() => openDialog('gradientEditor', { gradient: content.gradient, onPick: (g: Gradient) => set({ ...content, gradient: g }, false) })} />
+        <div
+          className="lp-gradient-bar"
+          style={{ background: gradientCss(content.gradient, content.reverse), cursor: 'pointer', marginBottom: 10 }}
+          title="Edit the gradient"
+          onClick={() => openDialog('gradientEditor', { gradient: content.gradient, onPick: (g: Gradient) => set({ ...content, gradient: g }, false) })}
+        />
         <div className="lp-panel-row">
           <Select
             label="Style"
@@ -255,7 +307,9 @@ function FillProps({ id, content }: { id: string; content: FillContent }) {
           />
         </div>
         {!content.p0 && <Slider label="Angle" value={content.angle} min={-180} max={180} suffix="°" onChange={(v) => set({ ...content, angle: v })} />}
-        {!content.p0 && <Slider label="Scale" value={content.scale} min={0.1} max={10} step={0.01} scale={100} suffix="%" onChange={(v) => set({ ...content, scale: v })} />}
+        {!content.p0 && (
+          <Slider label="Scale" value={content.scale} min={0.1} max={10} step={0.01} scale={100} suffix="%" onChange={(v) => set({ ...content, scale: v })} />
+        )}
         <Check label="Reverse" checked={content.reverse} onChange={(v) => set({ ...content, reverse: v }, false)} />
         <Check label="Dither" checked={!!content.dither} onChange={(v) => set({ ...content, dither: v }, false)} />
         {content.p0 && <div className="lp-note">Drag with the Gradient tool to move its ends.</div>}
@@ -264,7 +318,12 @@ function FillProps({ id, content }: { id: string; content: FillContent }) {
   return (
     <Section title="Pattern Fill">
       <div className="lp-panel-row">
-        <Select label="Pattern" value={content.pattern} options={allPatterns().map((p) => [p.id, p.name] as [string, string])} onChange={(v) => set({ ...content, pattern: v }, false)} />
+        <Select
+          label="Pattern"
+          value={content.pattern}
+          options={allPatterns().map((p) => [p.id, p.name] as [string, string])}
+          onChange={(v) => set({ ...content, pattern: v }, false)}
+        />
       </div>
       <Slider label="Scale" value={content.scale} min={0.01} max={10} step={0.01} scale={100} suffix="%" onChange={(v) => set({ ...content, scale: v })} />
     </Section>
@@ -273,13 +332,28 @@ function FillProps({ id, content }: { id: string; content: FillContent }) {
 
 function TextProps({ l }: { l: TextLayer }) {
   const b = l.text.base;
-  const setBase = (patch: Partial<typeof b>) => setTextModel(l.id, { ...l.text, base: { ...b, ...patch }, runs: l.text.runs.map((r) => (r.style ? { ...r, style: { ...r.style, ...patch } } : r)) }, 'Character');
+  const setBase = (patch: Partial<typeof b>) =>
+    setTextModel(
+      l.id,
+      { ...l.text, base: { ...b, ...patch }, runs: l.text.runs.map((r) => (r.style ? { ...r, style: { ...r.style, ...patch } } : r)) },
+      'Character',
+    );
   return (
     <>
       <Section title="Type Layer">
         <div className="lp-panel-row">
-          <Select value={b.family} options={FONT_FAMILIES.map((f) => [f, f] as [string, string])} onChange={(v) => setBase({ family: v })} title="Font" width={170} />
-          <ColorWell color={b.color} title="Text color" onClick={() => openDialog('colorPicker', { color: b.color, onPick: (c: [number, number, number]) => setBase({ color: c }) })} />
+          <Select
+            value={b.family}
+            options={FONT_FAMILIES.map((f) => [f, f] as [string, string])}
+            onChange={(v) => setBase({ family: v })}
+            title="Font"
+            width={170}
+          />
+          <ColorWell
+            color={b.color}
+            title="Text color"
+            onClick={() => openDialog('colorPicker', { color: b.color, onPick: (c: [number, number, number]) => setBase({ color: c }) })}
+          />
         </div>
         <div className="lp-panel-row">
           <NumberField label="Size" value={b.size} min={1} max={5000} digits={1} suffix="px" width={56} onChange={(v) => setBase({ size: v })} />
@@ -303,7 +377,18 @@ function TextProps({ l }: { l: TextLayer }) {
             onChange={(v) => setTextModel(l.id, { ...l.text, warp: v === 'none' ? undefined : { style: v, bend: l.text.warp?.bend ?? 0.5 } }, 'Warp Text')}
           />
         </div>
-        {l.text.warp && <Slider label="Bend" value={l.text.warp.bend} min={-1} max={1} step={0.01} scale={100} suffix="%" onChange={(v) => setTextModel(l.id, { ...l.text, warp: { ...l.text.warp!, bend: v } }, 'Warp Text')} />}
+        {l.text.warp && (
+          <Slider
+            label="Bend"
+            value={l.text.warp.bend}
+            min={-1}
+            max={1}
+            step={0.01}
+            scale={100}
+            suffix="%"
+            onChange={(v) => setTextModel(l.id, { ...l.text, warp: { ...l.text.warp!, bend: v } }, 'Warp Text')}
+          />
+        )}
       </Section>
       <div className="lp-panel-row" style={{ marginTop: 10 }}>
         <button className="lp-btn" onClick={() => window.dispatchEvent(new CustomEvent('lp-open-panel', { detail: 'character' }))}>
@@ -329,23 +414,56 @@ function ShapeProps({ l }: { l: ShapeLayer }) {
         <span className="lp-label" style={{ width: 50 }}>
           Fill
         </span>
-        {l.fillColor ? <ColorWell color={l.fillColor} title="Fill color" onClick={() => openDialog('colorPicker', { color: l.fillColor!.slice(0, 3), onPick: (c: [number, number, number]) => set({ fillColor: [...c, 1] }, 'Shape Fill', false) })} /> : null}
+        {l.fillColor ? (
+          <ColorWell
+            color={l.fillColor}
+            title="Fill color"
+            onClick={() =>
+              openDialog('colorPicker', {
+                color: l.fillColor!.slice(0, 3),
+                onPick: (c: [number, number, number]) => set({ fillColor: [...c, 1] }, 'Shape Fill', false),
+              })
+            }
+          />
+        ) : null}
         <Check label="None" checked={!l.fillColor} onChange={(v) => set({ fillColor: v ? null : [...app.get().fg, 1] }, 'Shape Fill', false)} />
       </div>
       <div className="lp-panel-row">
         <span className="lp-label" style={{ width: 50 }}>
           Stroke
         </span>
-        {l.stroke ? <ColorWell color={l.stroke.color} title="Stroke color" onClick={() => openDialog('colorPicker', { color: l.stroke!.color.slice(0, 3), onPick: (c: [number, number, number]) => set({ stroke: { ...l.stroke!, color: [...c, 1] } }, 'Shape Stroke', false) })} /> : null}
+        {l.stroke ? (
+          <ColorWell
+            color={l.stroke.color}
+            title="Stroke color"
+            onClick={() =>
+              openDialog('colorPicker', {
+                color: l.stroke!.color.slice(0, 3),
+                onPick: (c: [number, number, number]) => set({ stroke: { ...l.stroke!, color: [...c, 1] } }, 'Shape Stroke', false),
+              })
+            }
+          />
+        ) : null}
         <Check
           label="None"
           checked={!l.stroke}
-          onChange={(v) => set({ stroke: v ? null : { color: [...app.get().fg, 1], width: 3, align: 'center', cap: 'butt', join: 'miter', dash: [] } }, 'Shape Stroke', false)}
+          onChange={(v) =>
+            set({ stroke: v ? null : { color: [...app.get().fg, 1], width: 3, align: 'center', cap: 'butt', join: 'miter', dash: [] } }, 'Shape Stroke', false)
+          }
         />
       </div>
       {l.stroke && (
         <>
-          <Slider label="Stroke Width" value={l.stroke.width} min={0} max={200} step={0.5} digits={1} suffix="px" onChange={(v) => set({ stroke: { ...l.stroke!, width: v } }, 'Shape Stroke')} />
+          <Slider
+            label="Stroke Width"
+            value={l.stroke.width}
+            min={0}
+            max={200}
+            step={0.5}
+            digits={1}
+            suffix="px"
+            onChange={(v) => set({ stroke: { ...l.stroke!, width: v } }, 'Shape Stroke')}
+          />
           <div className="lp-panel-row">
             <Select
               label="Align"
@@ -400,7 +518,9 @@ function SmartProps({ l }: { l: SmartLayer }) {
         <Section title="Smart Filters">
           {l.filters.map((f) => (
             <div key={f.id} className="lp-row" style={{ padding: '0 2px' }}>
-              <span className="lp-grow">{f.filter.startsWith('adj:') ? ADJUSTMENT_NAMES[f.filter.slice(4) as keyof typeof ADJUSTMENT_NAMES] : names.get(f.filter)}</span>
+              <span className="lp-grow">
+                {f.filter.startsWith('adj:') ? ADJUSTMENT_NAMES[f.filter.slice(4) as keyof typeof ADJUSTMENT_NAMES] : names.get(f.filter)}
+              </span>
               <button
                 className="lp-btn"
                 onClick={async () => {

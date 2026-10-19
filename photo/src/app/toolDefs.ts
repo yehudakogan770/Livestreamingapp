@@ -197,19 +197,76 @@ export interface ToolOptions {
   clone: { tip: BrushTip; opacity: number; flow: number; aligned: boolean; sample: 'current' | 'below' | 'all'; mode: BlendMode };
   pattern: { tip: BrushTip; opacity: number; flow: number; pattern: string; aligned: boolean };
   history: { tip: BrushTip; opacity: number; flow: number; mode: BlendMode };
-  heal: { tip: BrushTip; mode: 'normal' | 'replace' | 'multiply' | 'screen' | 'darken' | 'lighten'; source: 'sampled' | 'pattern'; aligned: boolean; sample: 'current' | 'all' };
+  heal: {
+    tip: BrushTip;
+    mode: 'normal' | 'replace' | 'multiply' | 'screen' | 'darken' | 'lighten';
+    source: 'sampled' | 'pattern';
+    aligned: boolean;
+    sample: 'current' | 'all';
+  };
   spot: { tip: BrushTip; type: 'contentAware' | 'proximity' | 'texture'; allLayers: boolean };
   remove: { tip: BrushTip; allLayers: boolean };
   patch: { mode: 'normal' | 'contentAware'; source: boolean; structure: number };
   redEye: { pupil: number; darken: number };
   focus: { tip: BrushTip; strength: number; mode: BlendMode; allLayers: boolean; protectDetail: boolean; fingerPainting: boolean };
-  tone: { tip: BrushTip; range: 'shadows' | 'midtones' | 'highlights'; exposure: number; protectTones: boolean; sponge: 'saturate' | 'desaturate'; flow: number; vibrance: boolean };
-  gradient: { style: GradientStyle; mode: BlendMode; opacity: number; reverse: boolean; dither: boolean; transparency: boolean; preset: number; asLayer: boolean };
-  bucket: { source: 'fg' | 'pattern'; pattern: string; mode: BlendMode; opacity: number; tolerance: number; antialias: boolean; contiguous: boolean; allLayers: boolean };
-  crop: { ratio: 'free' | 'original' | '1:1' | '4:5' | '5:7' | '2:3' | '16:9' | '9:16' | 'custom'; w: number; h: number; deleteCropped: boolean; contentAware: boolean; overlay: 'thirds' | 'grid' | 'golden' | 'diagonal' | 'none'; straighten: boolean };
+  tone: {
+    tip: BrushTip;
+    range: 'shadows' | 'midtones' | 'highlights';
+    exposure: number;
+    protectTones: boolean;
+    sponge: 'saturate' | 'desaturate';
+    flow: number;
+    vibrance: boolean;
+  };
+  gradient: {
+    style: GradientStyle;
+    mode: BlendMode;
+    opacity: number;
+    reverse: boolean;
+    dither: boolean;
+    transparency: boolean;
+    preset: number;
+    asLayer: boolean;
+  };
+  bucket: {
+    source: 'fg' | 'pattern';
+    pattern: string;
+    mode: BlendMode;
+    opacity: number;
+    tolerance: number;
+    antialias: boolean;
+    contiguous: boolean;
+    allLayers: boolean;
+  };
+  crop: {
+    ratio: 'free' | 'original' | '1:1' | '4:5' | '5:7' | '2:3' | '16:9' | '9:16' | 'custom';
+    w: number;
+    h: number;
+    deleteCropped: boolean;
+    contentAware: boolean;
+    overlay: 'thirds' | 'grid' | 'golden' | 'diagonal' | 'none';
+    straighten: boolean;
+  };
   eyedropper: { sample: 1 | 3 | 5 | 11 | 31; from: 'all' | 'current' };
-  type: { family: string; weight: number; italic: boolean; size: number; align: 'left' | 'center' | 'right' | 'justify'; antialias: 'none' | 'sharp' | 'smooth' };
-  shape: { mode: 'shape' | 'path' | 'pixels'; fill: [number, number, number] | null; stroke: [number, number, number] | null; strokeWidth: number; radius: number; sides: number; star: number; lineWeight: number; custom: string };
+  type: {
+    family: string;
+    weight: number;
+    italic: boolean;
+    size: number;
+    align: 'left' | 'center' | 'right' | 'justify';
+    antialias: 'none' | 'sharp' | 'smooth';
+  };
+  shape: {
+    mode: 'shape' | 'path' | 'pixels';
+    fill: [number, number, number] | null;
+    stroke: [number, number, number] | null;
+    strokeWidth: number;
+    radius: number;
+    sides: number;
+    star: number;
+    lineWeight: number;
+    custom: string;
+  };
   pen: { mode: 'shape' | 'path'; autoAdd: boolean; rubberBand: boolean };
   move: { autoSelect: boolean; autoSelectGroups: boolean; showTransform: boolean };
   zoom: { scrubby: boolean; resizeWindows: boolean };

@@ -277,7 +277,14 @@ export async function encodePNG(width: number, height: number, rgba: Uint8Array 
   const w = new Writer(raw.length / 2 + 1024);
   w.bytes(new Uint8Array(SIG));
   const ihdr = new Writer(13);
-  ihdr.u32(width).u32(height).u8(o.depth).u8(o.alpha ? 6 : 2).u8(0).u8(0).u8(0);
+  ihdr
+    .u32(width)
+    .u32(height)
+    .u8(o.depth)
+    .u8(o.alpha ? 6 : 2)
+    .u8(0)
+    .u8(0)
+    .u8(0);
   chunk(w, 'IHDR', ihdr.result());
   if (o.icc) {
     const name = new TextEncoder().encode((o.iccName ?? 'ICC profile').replace(/[^\x20-\x7e]/g, '').slice(0, 79) || 'ICC profile');

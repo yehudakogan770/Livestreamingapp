@@ -274,7 +274,8 @@ export function ColorRangeDialog({ onClose }: { onClose: () => void }) {
               const p = e.shiftKey ? 'add' : e.altKey ? 'sub' : pick;
               if (p === 'set') setSamples([c]);
               else if (p === 'add') setSamples([...samples, c]);
-              else setSamples(samples.length > 1 ? samples.filter((s) => Math.abs(s[0] - c[0]) + Math.abs(s[1] - c[1]) + Math.abs(s[2] - c[2]) > 0.12) : samples);
+              else
+                setSamples(samples.length > 1 ? samples.filter((s) => Math.abs(s[0] - c[0]) + Math.abs(s[1] - c[1]) + Math.abs(s[2] - c[2]) > 0.12) : samples);
             }}
           />
         </div>

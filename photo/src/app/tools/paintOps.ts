@@ -151,7 +151,13 @@ export function focusOp(stroke: () => BrushStroke, kind: 'blur' | 'sharpen', str
 }
 
 /** Dodge (lighten), Burn (darken) or Sponge (saturation) by tonal range. */
-export function toneOp(kind: 'dodge' | 'burn' | 'sponge', range: 'shadows' | 'midtones' | 'highlights', exposure: number, protect: boolean, sponge: 'saturate' | 'desaturate'): PixelOp {
+export function toneOp(
+  kind: 'dodge' | 'burn' | 'sponge',
+  range: 'shadows' | 'midtones' | 'highlights',
+  exposure: number,
+  protect: boolean,
+  sponge: 'saturate' | 'desaturate',
+): PixelOp {
   const weight = (l: number) => (range === 'shadows' ? (1 - l) * (1 - l) : range === 'highlights' ? l * l : 4 * l * (1 - l));
   return {
     apply(r, orig, cov, out) {
@@ -192,7 +198,12 @@ export function toneOp(kind: 'dodge' | 'burn' | 'sponge', range: 'shadows' | 'mi
 }
 
 /** Color Replacement: pixels close to the color under the brush's center take the paint's hue / color. */
-export function colorReplaceOp(stroke: () => BrushStroke, color: [number, number, number], mode: 'hue' | 'saturation' | 'color' | 'luminosity', tolerance: number): PixelOp {
+export function colorReplaceOp(
+  stroke: () => BrushStroke,
+  color: [number, number, number],
+  mode: 'hue' | 'saturation' | 'color' | 'luminosity',
+  tolerance: number,
+): PixelOp {
   const [th, ts, tl] = rgbToHsl(color[0], color[1], color[2]);
   return {
     apply(r, orig, cov, out) {
@@ -208,7 +219,8 @@ export function colorReplaceOp(stroke: () => BrushStroke, color: [number, number
         const diff = Math.max(Math.abs(orig[o]! - ref[0]!), Math.abs(orig[o + 1]! - ref[1]!), Math.abs(orig[o + 2]! - ref[2]!));
         if (diff > tol) continue;
         const [h, s, l] = rgbToHsl(orig[o]!, orig[o + 1]!, orig[o + 2]!);
-        const v = mode === 'hue' ? hslToRgb(th, s, l) : mode === 'saturation' ? hslToRgb(h, ts, l) : mode === 'luminosity' ? hslToRgb(h, s, tl) : hslToRgb(th, ts, l);
+        const v =
+          mode === 'hue' ? hslToRgb(th, s, l) : mode === 'saturation' ? hslToRgb(h, ts, l) : mode === 'luminosity' ? hslToRgb(h, s, tl) : hslToRgb(th, ts, l);
         for (let k = 0; k < 3; k++) out[o + k] = orig[o + k]! + (v[k]! - orig[o + k]!) * c;
       }
     },
@@ -239,7 +251,11 @@ export function bgEraseOp(stroke: () => BrushStroke, tolerance: number, protect:
 }
 
 /** Smudge and the Mixer Brush: color carried from dab to dab. */
-export function smudgeOp(strength: number, finger: [number, number, number] | null, mixer: { wet: number; load: number; mix: number; color: [number, number, number] } | null): PixelOp {
+export function smudgeOp(
+  strength: number,
+  finger: [number, number, number] | null,
+  mixer: { wet: number; load: number; mix: number; color: [number, number, number] } | null,
+): PixelOp {
   let carry: Float32Array | null = null;
   let carrySize = 0;
   return {
@@ -255,7 +271,9 @@ export function smudgeOp(strength: number, finger: [number, number, number] | nu
         carry = cur.slice();
         carrySize = size;
         if (finger) for (let i = 0; i < size * size; i++) carry.set([finger[0], finger[1], finger[2], 1], i * 4);
-        if (mixer) for (let i = 0; i < size * size; i++) for (let k = 0; k < 3; k++) carry[i * 4 + k] = carry[i * 4 + k]! * (1 - mixer.load) + mixer.color[k]! * mixer.load;
+        if (mixer)
+          for (let i = 0; i < size * size; i++)
+            for (let k = 0; k < 3; k++) carry[i * 4 + k] = carry[i * 4 + k]! * (1 - mixer.load) + mixer.color[k]! * mixer.load;
         return;
       }
       const tip = st.o.tip;

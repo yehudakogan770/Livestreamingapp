@@ -113,7 +113,17 @@ export interface ParamsMap {
     colorizeLight: number;
   };
   colorBalance: { shadows: [number, number, number]; midtones: [number, number, number]; highlights: [number, number, number]; preserve: boolean };
-  blackWhite: { reds: number; yellows: number; greens: number; cyans: number; blues: number; magentas: number; tint: boolean; tintHue: number; tintSat: number };
+  blackWhite: {
+    reds: number;
+    yellows: number;
+    greens: number;
+    cyans: number;
+    blues: number;
+    magentas: number;
+    tint: boolean;
+    tintHue: number;
+    tintSat: number;
+  };
   photoFilter: { color: [number, number, number]; density: number; preserve: boolean };
   channelMixer: { r: [number, number, number, number]; g: [number, number, number, number]; b: [number, number, number, number]; mono: boolean };
   colorLookup: { lut: Lut3D | null };
@@ -183,7 +193,17 @@ export function defaultParams<T extends AdjustmentType>(t: T): ParamsMap[T] {
     },
     selectiveColor: {
       relative: true,
-      ranges: { reds: zero(), yellows: zero(), greens: zero(), cyans: zero(), blues: zero(), magentas: zero(), whites: zero(), neutrals: zero(), blacks: zero() },
+      ranges: {
+        reds: zero(),
+        yellows: zero(),
+        greens: zero(),
+        cyans: zero(),
+        blues: zero(),
+        magentas: zero(),
+        whites: zero(),
+        neutrals: zero(),
+        blacks: zero(),
+      },
     },
   };
   return structuredClone(d[t]) as ParamsMap[T];
@@ -235,7 +255,7 @@ export function curveTable(points: CurvePoints, n = 1024): Float32Array {
       const h = xs[hi]! - xs[lo]! || 1e-9;
       const a = (xs[hi]! - x) / h,
         b = (x - xs[lo]!) / h;
-      y = a * ys[lo]! + b * ys[hi]! + ((a * a * a - a) * y2[lo]! + (b * b * b - b) * y2[hi]!) * (h * h) / 6;
+      y = a * ys[lo]! + b * ys[hi]! + (((a * a * a - a) * y2[lo]! + (b * b * b - b) * y2[hi]!) * (h * h)) / 6;
     }
     out[i] = clamp(y);
   }
@@ -430,7 +450,14 @@ export function pixelFn(type: AdjustmentType, params: AdjustmentParams, ctx: Adj
     }
     case 'blackWhite': {
       const p = params as ParamsMap['blackWhite'];
-      const W: Record<string, number> = { reds: p.reds / 100, yellows: p.yellows / 100, greens: p.greens / 100, cyans: p.cyans / 100, blues: p.blues / 100, magentas: p.magentas / 100 };
+      const W: Record<string, number> = {
+        reds: p.reds / 100,
+        yellows: p.yellows / 100,
+        greens: p.greens / 100,
+        cyans: p.cyans / 100,
+        blues: p.blues / 100,
+        magentas: p.magentas / 100,
+      };
       const tint = p.tint ? hslToRgb(p.tintHue / 360, p.tintSat / 100, 0.5) : null;
       return (r, g, b, o) => {
         const ch = [r, g, b];
@@ -635,7 +662,8 @@ const SEPARABLE = new Set<AdjustmentType>(['brightnessContrast', 'levels', 'curv
 /** Is an adjustment doing nothing (skipped when drawing)? */
 export function isIdentity(type: AdjustmentType, params: AdjustmentParams): boolean {
   const z = defaultParams(type);
-  if (type === 'invert' || type === 'posterize' || type === 'threshold' || type === 'gradientMap' || type === 'blackWhite' || type === 'photoFilter') return false;
+  if (type === 'invert' || type === 'posterize' || type === 'threshold' || type === 'gradientMap' || type === 'blackWhite' || type === 'photoFilter')
+    return false;
   if (type === 'colorLookup') return !(params as ParamsMap['colorLookup']).lut;
   return JSON.stringify(params) === JSON.stringify(z);
 }

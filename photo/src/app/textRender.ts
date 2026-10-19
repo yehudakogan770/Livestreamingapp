@@ -267,7 +267,7 @@ export function drawText(ctx: Ctx, t: TextModel, origin: { x: number; y: number 
     let extra = 0;
     for (const r of l.runs) {
       drawRun(ctx, r, lx + r.x + extra, top + l.baseline, l.justifyGap);
-      if (l.justifyGap) extra += l.justifyGap * ((shown(r.text, r.style).match(/ /g) ?? []).length);
+      if (l.justifyGap) extra += l.justifyGap * (shown(r.text, r.style).match(/ /g) ?? []).length;
     }
   });
   ctx.restore();

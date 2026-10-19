@@ -3,7 +3,17 @@
 // the histogram of what they change.
 
 import { useEffect, useRef, useState } from 'react';
-import { defaultParams, curveTable, SELECTIVE_RANGES, parseCube, type AdjustmentType, type AdjustmentParams, type ParamsMap, type CurvePoints, type LevelsChannel } from '../core/adjust';
+import {
+  defaultParams,
+  curveTable,
+  SELECTIVE_RANGES,
+  parseCube,
+  type AdjustmentType,
+  type AdjustmentParams,
+  type ParamsMap,
+  type CurvePoints,
+  type LevelsChannel,
+} from '../core/adjust';
 import { GRADIENT_PRESETS } from '../core/gradient';
 import { Slider, Select, Check, ColorWell } from './fields';
 import { openDialog, toast } from '../app/state';
@@ -18,15 +28,40 @@ const CH_OPTS: [Ch, string][] = [
   ['b', 'Blue'],
 ];
 
-export function AdjustEditor({ type, params, onChange, hist }: { type: AdjustmentType; params: AdjustmentParams; onChange: (p: AdjustmentParams, final: boolean) => void; hist?: Uint32Array[] | null }) {
-  const set = <T extends AdjustmentType>(patch: Partial<ParamsMap[T]>, final = false) => onChange({ ...(params as object), ...patch } as unknown as AdjustmentParams, final);
+export function AdjustEditor({
+  type,
+  params,
+  onChange,
+  hist,
+}: {
+  type: AdjustmentType;
+  params: AdjustmentParams;
+  onChange: (p: AdjustmentParams, final: boolean) => void;
+  hist?: Uint32Array[] | null;
+}) {
+  const set = <T extends AdjustmentType>(patch: Partial<ParamsMap[T]>, final = false) =>
+    onChange({ ...(params as object), ...patch } as unknown as AdjustmentParams, final);
   switch (type) {
     case 'brightnessContrast': {
       const p = params as ParamsMap['brightnessContrast'];
       return (
         <>
-          <Slider label="Brightness" value={p.brightness} min={p.legacy ? -100 : -150} max={p.legacy ? 100 : 150} onChange={(v) => set({ brightness: v })} onCommit={(v) => set({ brightness: v }, true)} />
-          <Slider label="Contrast" value={p.contrast} min={p.legacy ? -100 : -50} max={100} onChange={(v) => set({ contrast: v })} onCommit={(v) => set({ contrast: v }, true)} />
+          <Slider
+            label="Brightness"
+            value={p.brightness}
+            min={p.legacy ? -100 : -150}
+            max={p.legacy ? 100 : 150}
+            onChange={(v) => set({ brightness: v })}
+            onCommit={(v) => set({ brightness: v }, true)}
+          />
+          <Slider
+            label="Contrast"
+            value={p.contrast}
+            min={p.legacy ? -100 : -50}
+            max={100}
+            onChange={(v) => set({ contrast: v })}
+            onCommit={(v) => set({ contrast: v }, true)}
+          />
           <Check label="Use Legacy" checked={p.legacy} onChange={(v) => set({ legacy: v }, true)} />
         </>
       );
@@ -39,9 +74,36 @@ export function AdjustEditor({ type, params, onChange, hist }: { type: Adjustmen
       const p = params as ParamsMap['exposure'];
       return (
         <>
-          <Slider label="Exposure" value={p.exposure} min={-20} max={20} step={0.01} digits={2} onChange={(v) => set({ exposure: v })} onCommit={(v) => set({ exposure: v }, true)} />
-          <Slider label="Offset" value={p.offset} min={-0.5} max={0.5} step={0.0001} digits={4} onChange={(v) => set({ offset: v })} onCommit={(v) => set({ offset: v }, true)} />
-          <Slider label="Gamma Correction" value={p.gamma} min={0.01} max={9.99} step={0.01} digits={2} onChange={(v) => set({ gamma: v })} onCommit={(v) => set({ gamma: v }, true)} />
+          <Slider
+            label="Exposure"
+            value={p.exposure}
+            min={-20}
+            max={20}
+            step={0.01}
+            digits={2}
+            onChange={(v) => set({ exposure: v })}
+            onCommit={(v) => set({ exposure: v }, true)}
+          />
+          <Slider
+            label="Offset"
+            value={p.offset}
+            min={-0.5}
+            max={0.5}
+            step={0.0001}
+            digits={4}
+            onChange={(v) => set({ offset: v })}
+            onCommit={(v) => set({ offset: v }, true)}
+          />
+          <Slider
+            label="Gamma Correction"
+            value={p.gamma}
+            min={0.01}
+            max={9.99}
+            step={0.01}
+            digits={2}
+            onChange={(v) => set({ gamma: v })}
+            onCommit={(v) => set({ gamma: v }, true)}
+          />
         </>
       );
     }
@@ -49,8 +111,22 @@ export function AdjustEditor({ type, params, onChange, hist }: { type: Adjustmen
       const p = params as ParamsMap['vibrance'];
       return (
         <>
-          <Slider label="Vibrance" value={p.vibrance} min={-100} max={100} onChange={(v) => set({ vibrance: v })} onCommit={(v) => set({ vibrance: v }, true)} />
-          <Slider label="Saturation" value={p.saturation} min={-100} max={100} onChange={(v) => set({ saturation: v })} onCommit={(v) => set({ saturation: v }, true)} />
+          <Slider
+            label="Vibrance"
+            value={p.vibrance}
+            min={-100}
+            max={100}
+            onChange={(v) => set({ vibrance: v })}
+            onCommit={(v) => set({ vibrance: v }, true)}
+          />
+          <Slider
+            label="Saturation"
+            value={p.saturation}
+            min={-100}
+            max={100}
+            onChange={(v) => set({ saturation: v })}
+            onCommit={(v) => set({ saturation: v }, true)}
+          />
         </>
       );
     }
@@ -67,11 +143,27 @@ export function AdjustEditor({ type, params, onChange, hist }: { type: Adjustmen
           {p.tint && (
             <>
               <Slider label="Tint Hue" value={p.tintHue} min={0} max={360} onChange={(v) => set({ tintHue: v })} onCommit={(v) => set({ tintHue: v }, true)} />
-              <Slider label="Tint Saturation" value={p.tintSat} min={0} max={100} onChange={(v) => set({ tintSat: v })} onCommit={(v) => set({ tintSat: v }, true)} />
+              <Slider
+                label="Tint Saturation"
+                value={p.tintSat}
+                min={0}
+                max={100}
+                onChange={(v) => set({ tintSat: v })}
+                onCommit={(v) => set({ tintSat: v }, true)}
+              />
             </>
           )}
           {keys.map((k) => (
-            <Slider key={k} label={k[0]!.toUpperCase() + k.slice(1)} value={p[k]} min={-200} max={300} suffix="%" onChange={(v) => set({ [k]: v })} onCommit={(v) => set({ [k]: v }, true)} />
+            <Slider
+              key={k}
+              label={k[0]!.toUpperCase() + k.slice(1)}
+              value={p[k]}
+              min={-200}
+              max={300}
+              suffix="%"
+              onChange={(v) => set({ [k]: v })}
+              onCommit={(v) => set({ [k]: v }, true)}
+            />
           ))}
           <button className="lp-btn" onClick={() => onChange(defaultParams('blackWhite'), true)}>
             Default
@@ -95,13 +187,32 @@ export function AdjustEditor({ type, params, onChange, hist }: { type: Adjustmen
       return (
         <>
           <div className="lp-panel-row">
-            <Select label="Filter" value={cur?.[0] ?? 'custom'} options={[...presets.map(([n]) => [n, n] as [string, string]), ['custom', 'Custom']]} onChange={(v) => {
-              const pr = presets.find(([n]) => n === v);
-              if (pr) set({ color: pr[1] }, true);
-            }} />
-            <ColorWell color={p.color} title="Filter color" onClick={() => openDialog('colorPicker', { color: p.color, onPick: (c: [number, number, number]) => set({ color: c }, true) })} />
+            <Select
+              label="Filter"
+              value={cur?.[0] ?? 'custom'}
+              options={[...presets.map(([n]) => [n, n] as [string, string]), ['custom', 'Custom']]}
+              onChange={(v) => {
+                const pr = presets.find(([n]) => n === v);
+                if (pr) set({ color: pr[1] }, true);
+              }}
+            />
+            <ColorWell
+              color={p.color}
+              title="Filter color"
+              onClick={() => openDialog('colorPicker', { color: p.color, onPick: (c: [number, number, number]) => set({ color: c }, true) })}
+            />
           </div>
-          <Slider label="Density" value={p.density} min={0} max={1} step={0.01} scale={100} suffix="%" onChange={(v) => set({ density: v })} onCommit={(v) => set({ density: v }, true)} />
+          <Slider
+            label="Density"
+            value={p.density}
+            min={0}
+            max={1}
+            step={0.01}
+            scale={100}
+            suffix="%"
+            onChange={(v) => set({ density: v })}
+            onCommit={(v) => set({ density: v }, true)}
+          />
           <Check label="Preserve Luminosity" checked={p.preserve} onChange={(v) => set({ preserve: v }, true)} />
         </>
       );
@@ -158,8 +269,18 @@ export function AdjustEditor({ type, params, onChange, hist }: { type: Adjustmen
       const p = params as ParamsMap['gradientMap'];
       return (
         <>
-          <div className="lp-gradient-bar" style={{ background: gradientCss(p.gradient, p.reverse), cursor: 'pointer', marginBottom: 8 }} onClick={() => openDialog('gradientEditor', { gradient: p.gradient, onPick: (g: typeof p.gradient) => set({ gradient: g }, true) })} title="Edit the gradient" />
-          <Select label="Preset" value={GRADIENT_PRESETS.findIndex((g) => g.name === p.gradient.name)} options={[[-1, 'Custom'] as [number, string], ...GRADIENT_PRESETS.map((g, i) => [i, g.name] as [number, string])]} onChange={(i) => i >= 0 && set({ gradient: structuredClone(GRADIENT_PRESETS[i]!) }, true)} />
+          <div
+            className="lp-gradient-bar"
+            style={{ background: gradientCss(p.gradient, p.reverse), cursor: 'pointer', marginBottom: 8 }}
+            onClick={() => openDialog('gradientEditor', { gradient: p.gradient, onPick: (g: typeof p.gradient) => set({ gradient: g }, true) })}
+            title="Edit the gradient"
+          />
+          <Select
+            label="Preset"
+            value={GRADIENT_PRESETS.findIndex((g) => g.name === p.gradient.name)}
+            options={[[-1, 'Custom'] as [number, string], ...GRADIENT_PRESETS.map((g, i) => [i, g.name] as [number, string])]}
+            onChange={(i) => i >= 0 && set({ gradient: structuredClone(GRADIENT_PRESETS[i]!) }, true)}
+          />
           <div style={{ height: 6 }} />
           <Check label="Reverse" checked={p.reverse} onChange={(v) => set({ reverse: v }, true)} />
         </>
@@ -172,7 +293,17 @@ export function AdjustEditor({ type, params, onChange, hist }: { type: Adjustmen
 
 // ---- histogram ----
 
-export function HistogramCanvas({ hist, channel, marks = [], height = 90 }: { hist: Uint32Array[]; channel: Ch | 'colors'; marks?: number[]; height?: number }) {
+export function HistogramCanvas({
+  hist,
+  channel,
+  marks = [],
+  height = 90,
+}: {
+  hist: Uint32Array[];
+  channel: Ch | 'colors';
+  marks?: number[];
+  height?: number;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const c = ref.current;
@@ -203,7 +334,17 @@ export function HistogramCanvas({ hist, channel, marks = [], height = 90 }: { hi
       draw(hist[1]!, 'rgba(60,200,80,0.75)');
       draw(hist[2]!, 'rgba(70,110,240,0.75)');
       ctx.globalCompositeOperation = 'source-over';
-    } else draw(hist[idx[channel]] ?? hist[0]!, channel === 'rgb' ? 'rgba(160,160,160,0.85)' : channel === 'r' ? 'rgba(220,70,70,0.85)' : channel === 'g' ? 'rgba(70,190,90,0.85)' : 'rgba(80,120,230,0.85)');
+    } else
+      draw(
+        hist[idx[channel]] ?? hist[0]!,
+        channel === 'rgb'
+          ? 'rgba(160,160,160,0.85)'
+          : channel === 'r'
+            ? 'rgba(220,70,70,0.85)'
+            : channel === 'g'
+              ? 'rgba(70,190,90,0.85)'
+              : 'rgba(80,120,230,0.85)',
+      );
     ctx.strokeStyle = 'rgba(255,255,255,0.8)';
     for (const m of marks) {
       ctx.beginPath();
@@ -217,7 +358,15 @@ export function HistogramCanvas({ hist, channel, marks = [], height = 90 }: { hi
 
 // ---- Levels ----
 
-function LevelsEditor({ p, onChange, hist }: { p: ParamsMap['levels']; onChange: (p: ParamsMap['levels'], final: boolean) => void; hist?: Uint32Array[] | null }) {
+function LevelsEditor({
+  p,
+  onChange,
+  hist,
+}: {
+  p: ParamsMap['levels'];
+  onChange: (p: ParamsMap['levels'], final: boolean) => void;
+  hist?: Uint32Array[] | null;
+}) {
   const [ch, setCh] = useState<Ch>('rgb');
   const c = p[ch];
   const set = (patch: Partial<LevelsChannel>, final = false) => onChange({ ...p, [ch]: { ...c, ...patch } }, final);
@@ -231,18 +380,63 @@ function LevelsEditor({ p, onChange, hist }: { p: ParamsMap['levels']; onChange:
         </button>
       </div>
       {hist && <HistogramCanvas hist={hist} channel={ch} marks={[c.inBlack, c.inWhite]} />}
-      <Slider label="Input Black" value={Math.round(c.inBlack * 255)} min={0} max={253} onChange={(v) => set({ inBlack: Math.min(v / 255, c.inWhite - 2 / 255) })} onCommit={(v) => set({ inBlack: Math.min(v / 255, c.inWhite - 2 / 255) }, true)} />
-      <Slider label="Gamma" value={c.gamma} min={0.1} max={9.99} step={0.01} digits={2} onChange={(v) => set({ gamma: v })} onCommit={(v) => set({ gamma: v }, true)} />
-      <Slider label="Input White" value={Math.round(c.inWhite * 255)} min={2} max={255} onChange={(v) => set({ inWhite: Math.max(v / 255, c.inBlack + 2 / 255) })} onCommit={(v) => set({ inWhite: Math.max(v / 255, c.inBlack + 2 / 255) }, true)} />
-      <Slider label="Output Black" value={Math.round(c.outBlack * 255)} min={0} max={255} onChange={(v) => set({ outBlack: v / 255 })} onCommit={(v) => set({ outBlack: v / 255 }, true)} />
-      <Slider label="Output White" value={Math.round(c.outWhite * 255)} min={0} max={255} onChange={(v) => set({ outWhite: v / 255 })} onCommit={(v) => set({ outWhite: v / 255 }, true)} />
+      <Slider
+        label="Input Black"
+        value={Math.round(c.inBlack * 255)}
+        min={0}
+        max={253}
+        onChange={(v) => set({ inBlack: Math.min(v / 255, c.inWhite - 2 / 255) })}
+        onCommit={(v) => set({ inBlack: Math.min(v / 255, c.inWhite - 2 / 255) }, true)}
+      />
+      <Slider
+        label="Gamma"
+        value={c.gamma}
+        min={0.1}
+        max={9.99}
+        step={0.01}
+        digits={2}
+        onChange={(v) => set({ gamma: v })}
+        onCommit={(v) => set({ gamma: v }, true)}
+      />
+      <Slider
+        label="Input White"
+        value={Math.round(c.inWhite * 255)}
+        min={2}
+        max={255}
+        onChange={(v) => set({ inWhite: Math.max(v / 255, c.inBlack + 2 / 255) })}
+        onCommit={(v) => set({ inWhite: Math.max(v / 255, c.inBlack + 2 / 255) }, true)}
+      />
+      <Slider
+        label="Output Black"
+        value={Math.round(c.outBlack * 255)}
+        min={0}
+        max={255}
+        onChange={(v) => set({ outBlack: v / 255 })}
+        onCommit={(v) => set({ outBlack: v / 255 }, true)}
+      />
+      <Slider
+        label="Output White"
+        value={Math.round(c.outWhite * 255)}
+        min={0}
+        max={255}
+        onChange={(v) => set({ outWhite: v / 255 })}
+        onCommit={(v) => set({ outWhite: v / 255 }, true)}
+      />
     </>
   );
 }
 
 // ---- Curves ----
 
-function CurvesEditor({ p, onChange, hist }: { p: ParamsMap['curves']; onChange: (p: ParamsMap['curves'], final: boolean) => void; hist?: Uint32Array[] | null }) {
+function CurvesEditor({
+  p,
+  onChange,
+  hist,
+}: {
+  p: ParamsMap['curves'];
+  onChange: (p: ParamsMap['curves'], final: boolean) => void;
+  hist?: Uint32Array[] | null;
+}) {
   const [ch, setCh] = useState<Ch>('rgb');
   const [sel, setSel] = useState<number | null>(null);
   const ref = useRef<HTMLCanvasElement>(null);
@@ -320,15 +514,31 @@ function CurvesEditor({ p, onChange, hist }: { p: ParamsMap['curves']; onChange:
   return (
     <>
       <div className="lp-panel-row">
-        <Select value={ch} options={CH_OPTS} onChange={(v) => {
-          setCh(v);
-          setSel(null);
-        }} title="Channel" />
+        <Select
+          value={ch}
+          options={CH_OPTS}
+          onChange={(v) => {
+            setCh(v);
+            setSel(null);
+          }}
+          title="Channel"
+        />
         <span style={{ flex: 1 }} />
         <button className="lp-btn" onClick={() => window.dispatchEvent(new CustomEvent('lp-auto-levels'))}>
           Auto
         </button>
-        <button className="lp-btn" onClick={() => setPts([[0, 0], [1, 1]], true)}>
+        <button
+          className="lp-btn"
+          onClick={() =>
+            setPts(
+              [
+                [0, 0],
+                [1, 1],
+              ],
+              true,
+            )
+          }
+        >
           Reset
         </button>
       </div>
@@ -375,7 +585,10 @@ function CurvesEditor({ p, onChange, hist }: { p: ParamsMap['curves']; onChange:
         onKeyDown={(e) => {
           if ((e.key === 'Delete' || e.key === 'Backspace') && sel !== null && pts.length > 2) {
             e.stopPropagation();
-            setPts(pts.filter((_, i) => i !== sel), true);
+            setPts(
+              pts.filter((_, i) => i !== sel),
+              true,
+            );
             setSel(null);
           }
         }}
@@ -404,9 +617,30 @@ function HueSatEditor({ p, onChange }: { p: ParamsMap['hueSaturation']; onChange
     return (
       <>
         <Check label="Colorize" checked onChange={(v) => onChange({ ...p, colorize: v }, true)} />
-        <Slider label="Hue" value={p.colorizeHue} min={0} max={360} onChange={(v) => onChange({ ...p, colorizeHue: v }, false)} onCommit={(v) => onChange({ ...p, colorizeHue: v }, true)} />
-        <Slider label="Saturation" value={p.colorizeSat} min={0} max={100} onChange={(v) => onChange({ ...p, colorizeSat: v }, false)} onCommit={(v) => onChange({ ...p, colorizeSat: v }, true)} />
-        <Slider label="Lightness" value={p.colorizeLight} min={-100} max={100} onChange={(v) => onChange({ ...p, colorizeLight: v }, false)} onCommit={(v) => onChange({ ...p, colorizeLight: v }, true)} />
+        <Slider
+          label="Hue"
+          value={p.colorizeHue}
+          min={0}
+          max={360}
+          onChange={(v) => onChange({ ...p, colorizeHue: v }, false)}
+          onCommit={(v) => onChange({ ...p, colorizeHue: v }, true)}
+        />
+        <Slider
+          label="Saturation"
+          value={p.colorizeSat}
+          min={0}
+          max={100}
+          onChange={(v) => onChange({ ...p, colorizeSat: v }, false)}
+          onCommit={(v) => onChange({ ...p, colorizeSat: v }, true)}
+        />
+        <Slider
+          label="Lightness"
+          value={p.colorizeLight}
+          min={-100}
+          max={100}
+          onChange={(v) => onChange({ ...p, colorizeLight: v }, false)}
+          onCommit={(v) => onChange({ ...p, colorizeLight: v }, true)}
+        />
       </>
     );
   return (
@@ -496,12 +730,19 @@ function ChannelMixerEditor({ p, onChange }: { p: ParamsMap['channelMixer']; onC
           }
           onChange={setOut}
         />
-        <Check label="Monochrome" checked={p.mono} onChange={(m) => onChange(m ? { ...p, mono: true, r: [40, 40, 20, 0], g: [40, 40, 20, 0], b: [40, 40, 20, 0] } : { ...p, mono: false }, true)} />
+        <Check
+          label="Monochrome"
+          checked={p.mono}
+          onChange={(m) => onChange(m ? { ...p, mono: true, r: [40, 40, 20, 0], g: [40, 40, 20, 0], b: [40, 40, 20, 0] } : { ...p, mono: false }, true)}
+        />
       </div>
       {['Red', 'Green', 'Blue', 'Constant'].map((n, i) => (
         <Slider key={n} label={n} value={v[i]!} min={-200} max={200} suffix="%" onChange={(x) => set(i, x, false)} onCommit={(x) => set(i, x, true)} />
       ))}
-      <div className={`lp-note${total > 100 ? ' lp-warning' : ''}`}>Total: {total > 0 ? '+' : ''}{total}%</div>
+      <div className={`lp-note${total > 100 ? ' lp-warning' : ''}`}>
+        Total: {total > 0 ? '+' : ''}
+        {total}%
+      </div>
     </>
   );
 }

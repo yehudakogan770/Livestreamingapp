@@ -83,10 +83,22 @@ export function ChannelsPanel() {
         {!doc.channels.length && <div className="lp-empty">Saved selections appear here (Select ▸ Save Selection).</div>}
       </div>
       <div className="lp-panel-foot">
-        <button className="lp-icon-btn" title="Load channel as selection" aria-label="Load channel as selection" disabled={!s.showMask || !doc.channels.some((c) => c.id === s.showMask)} onClick={() => s.showMask && sel.loadSelection(s.showMask)}>
+        <button
+          className="lp-icon-btn"
+          title="Load channel as selection"
+          aria-label="Load channel as selection"
+          disabled={!s.showMask || !doc.channels.some((c) => c.id === s.showMask)}
+          onClick={() => s.showMask && sel.loadSelection(s.showMask)}
+        >
           <CircleDashed size={15} />
         </button>
-        <button className="lp-icon-btn" title="Save selection as channel" aria-label="Save selection as channel" disabled={!doc.selection} onClick={() => sel.saveSelection()}>
+        <button
+          className="lp-icon-btn"
+          title="Save selection as channel"
+          aria-label="Save selection as channel"
+          disabled={!doc.selection}
+          onClick={() => sel.saveSelection()}
+        >
           <Save size={15} />
         </button>
         <button
@@ -94,14 +106,26 @@ export function ChannelsPanel() {
           title="New channel"
           aria-label="New channel"
           onClick={() => {
-            const ch = { id: uid('ch'), name: `Alpha ${doc.channels.length + 1}`, raster: new Raster(8, 1), visible: false, color: [1, 0, 0, 0.5] as [number, number, number, number] };
+            const ch = {
+              id: uid('ch'),
+              name: `Alpha ${doc.channels.length + 1}`,
+              raster: new Raster(8, 1),
+              visible: false,
+              color: [1, 0, 0, 0.5] as [number, number, number, number],
+            };
             s.commit('New Channel', 'channel', { ...s.doc, channels: [...s.doc.channels, ch] });
             bump();
           }}
         >
           <Plus size={16} />
         </button>
-        <button className="lp-icon-btn" title="Delete channel" aria-label="Delete channel" disabled={!doc.channels.some((c) => c.id === s.showMask)} onClick={() => s.showMask && sel.deleteChannel(s.showMask)}>
+        <button
+          className="lp-icon-btn"
+          title="Delete channel"
+          aria-label="Delete channel"
+          disabled={!doc.channels.some((c) => c.id === s.showMask)}
+          onClick={() => s.showMask && sel.deleteChannel(s.showMask)}
+        >
           <Trash2 size={15} />
         </button>
       </div>

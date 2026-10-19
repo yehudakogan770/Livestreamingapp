@@ -111,7 +111,13 @@ export async function writeLumphoto(doc: Doc, o: SaveOptions = {}): Promise<Uint
   const { profile, file: _f, id: _i, ...rest } = doc;
   const packedDoc = packValue({ ...rest, selection: doc.selection ? { mask: doc.selection.mask, bounds: doc.selection.bounds } : null }, rasters);
   const custom = profile.id === 'custom' || !!profile.icc;
-  const head: Packed = { format: 'lumphoto', version: LUMPHOTO_VERSION, app: 'Lumora Photo', doc: packedDoc, profile: { id: profile.id, name: profile.name, custom } };
+  const head: Packed = {
+    format: 'lumphoto',
+    version: LUMPHOTO_VERSION,
+    app: 'Lumora Photo',
+    doc: packedDoc,
+    profile: { id: profile.id, name: profile.name, custom },
+  };
   const entries: ZipEntry[] = [{ name: 'document.json', data: new TextEncoder().encode(JSON.stringify(head)) }];
   for (const [r, id] of rasters) entries.push({ name: `rasters/${id}.bin`, data: rasterBytes(r) });
   if (custom) entries.push({ name: 'profile.icc', data: writeICC(profile) });

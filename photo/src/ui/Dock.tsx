@@ -61,7 +61,12 @@ const ESSENTIALS = (): Layout => ({
   width: 300,
   groups: [
     { tabs: ['color', 'swatches', 'navigator', 'histogram', 'info'], active: 'color', size: 1.15, collapsed: false },
-    { tabs: ['properties', 'adjustments', 'history', 'brushes', 'character', 'paragraph', 'actions', 'comps'], active: 'properties', size: 1, collapsed: false },
+    {
+      tabs: ['properties', 'adjustments', 'history', 'brushes', 'character', 'paragraph', 'actions', 'comps'],
+      active: 'properties',
+      size: 1,
+      collapsed: false,
+    },
     { tabs: ['layers', 'channels', 'paths'], active: 'layers', size: 1.35, collapsed: false },
   ],
 });
@@ -208,7 +213,11 @@ export function Dock() {
           return (
             <div key={gi} style={{ display: 'contents' }}>
               {gi > 0 && <div className="lp-group-split" onPointerDown={resizeGroups(gi - 1)} role="separator" aria-label="Resize panel group" />}
-              <section className={`lp-group${g.collapsed ? ' lp-collapsed' : ''}`} style={{ flex: `${g.size} 1 0` }} aria-label={`${P?.label ?? ''} panel group`}>
+              <section
+                className={`lp-group${g.collapsed ? ' lp-collapsed' : ''}`}
+                style={{ flex: `${g.size} 1 0` }}
+                aria-label={`${P?.label ?? ''} panel group`}
+              >
                 <div
                   className="lp-group-tabs"
                   role="tablist"
@@ -221,7 +230,8 @@ export function Dock() {
                     setDragTab(null);
                   }}
                   onDoubleClick={(e) => {
-                    if (e.target === e.currentTarget) setLayout({ ...layout, groups: layout.groups.map((x, j) => (j === gi ? { ...x, collapsed: !x.collapsed } : x)) });
+                    if (e.target === e.currentTarget)
+                      setLayout({ ...layout, groups: layout.groups.map((x, j) => (j === gi ? { ...x, collapsed: !x.collapsed } : x)) });
                   }}
                 >
                   {g.tabs.map((t) => (
@@ -237,13 +247,23 @@ export function Dock() {
                         e.dataTransfer.setData('text/plain', t);
                       }}
                       onDragEnd={() => setDragTab(null)}
-                      onClick={() => setLayout({ ...layout, groups: layout.groups.map((x, j) => (j === gi ? { ...x, active: t, collapsed: x.active === t ? !x.collapsed : false } : x)) })}
+                      onClick={() =>
+                        setLayout({
+                          ...layout,
+                          groups: layout.groups.map((x, j) => (j === gi ? { ...x, active: t, collapsed: x.active === t ? !x.collapsed : false } : x)),
+                        })
+                      }
                     >
                       {PANELS.find((p) => p.id === t)?.label}
                     </button>
                   ))}
                   <span className="lp-spacer" />
-                  <button className="lp-icon-btn" aria-label={g.collapsed ? 'Expand' : 'Collapse'} title={g.collapsed ? 'Expand' : 'Collapse'} onClick={() => setLayout({ ...layout, groups: layout.groups.map((x, j) => (j === gi ? { ...x, collapsed: !x.collapsed } : x)) })}>
+                  <button
+                    className="lp-icon-btn"
+                    aria-label={g.collapsed ? 'Expand' : 'Collapse'}
+                    title={g.collapsed ? 'Expand' : 'Collapse'}
+                    onClick={() => setLayout({ ...layout, groups: layout.groups.map((x, j) => (j === gi ? { ...x, collapsed: !x.collapsed } : x)) })}
+                  >
                     {g.collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                   </button>
                   <button className="lp-icon-btn" aria-label={`Close ${P?.label}`} title="Close panel" onClick={() => togglePanel(g.active)}>

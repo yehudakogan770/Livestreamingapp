@@ -1,7 +1,24 @@
 // Adjustments: one click adds an adjustment layer above the active layer
 // (its settings open in Properties).
 
-import { Sun, BarChart3, Spline, PlusSquare, Triangle, Palette, Scale, Contrast, Filter, Blend, Table2, SquareSlash, Layers2, SquareHalf, Rainbow, Crosshair } from './adjustIcons';
+import {
+  Sun,
+  BarChart3,
+  Spline,
+  PlusSquare,
+  Triangle,
+  Palette,
+  Scale,
+  Contrast,
+  Filter,
+  Blend,
+  Table2,
+  SquareSlash,
+  Layers2,
+  SquareHalf,
+  Rainbow,
+  Crosshair,
+} from './adjustIcons';
 import { ADJUSTMENT_ORDER, ADJUSTMENT_NAMES, type AdjustmentType } from '../../core/adjust';
 import { newAdjustment } from '../../app/ops/layers';
 import { current, useApp } from '../../app/state';
@@ -49,7 +66,9 @@ export function AdjustmentsPanel() {
               }}
             >
               <I size={18} />
-              <span style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 2px' }}>{ADJUSTMENT_NAMES[t].split(/[ /&]/)[0]}</span>
+              <span style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 2px' }}>
+                {ADJUSTMENT_NAMES[t].split(/[ /&]/)[0]}
+              </span>
             </button>
           );
         })}

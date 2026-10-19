@@ -39,7 +39,15 @@ export class View {
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: false, stencil: false, premultipliedAlpha: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
+    const gl = canvas.getContext('webgl2', {
+      antialias: false,
+      alpha: false,
+      depth: false,
+      stencil: false,
+      premultipliedAlpha: false,
+      preserveDrawingBuffer: false,
+      powerPreference: 'high-performance',
+    });
     if (!gl) throw new Error('This browser has no WebGL2, which Lumora Photo needs to draw pictures.');
     const wantP3 = typeof matchMedia === 'function' && matchMedia('(color-gamut: p3)').matches;
     const g = gl as WebGL2RenderingContext & { drawingBufferColorSpace?: string };
@@ -80,12 +88,19 @@ export class View {
     let t = this.sel.get(s);
     if (!t || t.w !== doc.width || t.h !== doc.height) {
       if (t) gl.deleteTexture(t.tex);
-      t = { tex: makeTexture(gl, doc.width, doc.height, gl.R8, gl.RED, gl.UNSIGNED_BYTE, gl.NEAREST, null), w: doc.width, h: doc.height, raster: null, uploaded: new Map() };
+      t = {
+        tex: makeTexture(gl, doc.width, doc.height, gl.R8, gl.RED, gl.UNSIGNED_BYTE, gl.NEAREST, null),
+        w: doc.width,
+        h: doc.height,
+        raster: null,
+        uploaded: new Map(),
+      };
       // Start clear.
       const zero = new Uint8Array(doc.width * Math.min(doc.height, 256));
       scratchUnit(gl);
       gl.bindTexture(gl.TEXTURE_2D, t.tex);
-      for (let y = 0; y < doc.height; y += 256) gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, y, doc.width, Math.min(256, doc.height - y), gl.RED, gl.UNSIGNED_BYTE, zero);
+      for (let y = 0; y < doc.height; y += 256)
+        gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, y, doc.width, Math.min(256, doc.height - y), gl.RED, gl.UNSIGNED_BYTE, zero);
       this.sel.set(s, t);
     }
     scratchUnit(gl);
@@ -140,13 +155,18 @@ export class View {
     const k = 1 / dpr;
     const mat = new Float32Array([m[0] * k, m[1] * k, 0, m[2] * k, m[3] * k, 0, m[4], m[5], 1]);
     const p = gpu.program('view');
-    p.tex('uComp', comp.comp!.tex).v2('uDocSize', s.doc.width, s.doc.height).m3('uScreenToDoc', mat).f('uZoom', v.zoom * dpr);
+    p.tex('uComp', comp.comp!.tex)
+      .v2('uDocSize', s.doc.width, s.doc.height)
+      .m3('uScreenToDoc', mat)
+      .f('uZoom', v.zoom * dpr);
     p.v3('uPasteboard', ...o.pasteboard).v2('uViewport', W, H);
     // Color management.
     const display = this.p3 && o.displayP3 ? DISPLAY_P3 : SRGB;
     const linearDoc = s.doc.depth === 32;
     const same = !linearDoc && sameProfile(s.doc.profile, display);
-    p.i('uDecode', same || linearDoc ? 0 : 1).i('uLinearDoc', linearDoc ? 1 : 0).f('uExposure', Math.pow(2, o.exposure));
+    p.i('uDecode', same || linearDoc ? 0 : 1)
+      .i('uLinearDoc', linearDoc ? 1 : 0)
+      .f('uExposure', Math.pow(2, o.exposure));
     p.tex('uTrc', this.trcTex(s.doc.profile));
     const M = rgbToRgb(s.doc.profile, display);
     // GLSL mat3 is column-major.
@@ -154,9 +174,14 @@ export class View {
     const st = this.selTex(s);
     if (st) p.tex('uSel', st.tex).i('uHasSel', 1);
     else p.i('uHasSel', 0);
-    p.f('uTime', o.time).i('uQuickMask', s.quickMask ? 1 : 0).v4('uQuickColor', ...o.quickColor);
+    p.f('uTime', o.time)
+      .i('uQuickMask', s.quickMask ? 1 : 0)
+      .v4('uQuickColor', ...o.quickColor);
     if (s.quickMask && !st) p.i('uQuickMask', 1);
-    p.i('uChecker', 1).v3('uCheck1', ...o.check1).v3('uCheck2', ...o.check2).i('uPixelGrid', o.pixelGrid ? 1 : 0);
+    p.i('uChecker', 1)
+      .v3('uCheck1', ...o.check1)
+      .v3('uCheck2', ...o.check2)
+      .i('uPixelGrid', o.pixelGrid ? 1 : 0);
     if (showMask) {
       const { rt } = comp.syncRaster(showMask.raster);
       if (rt.tex && showMask.raster.depth === 8) {

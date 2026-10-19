@@ -2,7 +2,30 @@
 // (top first) with groups, masks, clipping and effects; drag to reorder.
 
 import { useEffect, useRef, useState } from 'react';
-import { Eye, EyeOff, Lock, Unlock, ChevronRight, ChevronDown, Folder, FolderOpen, Link2, CornerLeftDown, Trash2, Plus, FolderPlus, SquareDashed, Circle, SlidersHorizontal, Type, Shapes, Box, Grid3x3, Move as MoveIcon, Paintbrush } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  Unlock,
+  ChevronRight,
+  ChevronDown,
+  Folder,
+  FolderOpen,
+  Link2,
+  CornerLeftDown,
+  Trash2,
+  Plus,
+  FolderPlus,
+  SquareDashed,
+  Circle,
+  SlidersHorizontal,
+  Type,
+  Shapes,
+  Box,
+  Grid3x3,
+  Move as MoveIcon,
+  Paintbrush,
+} from 'lucide-react';
 import { current, useApp, bump, openDialog, requestFrame, app } from '../../app/state';
 import * as ops from '../../app/ops/layers';
 import { findLayer, allLayers } from '../../core/layers';
@@ -137,7 +160,14 @@ export function LayersPanel() {
 
   const locks = active?.locks ?? {};
   const lockBtn = (k: 'transparency' | 'pixels' | 'position' | 'all', title: string, icon: React.ReactNode) => (
-    <button className="lp-icon-btn" aria-pressed={!!locks[k]} title={title} aria-label={title} disabled={!active} onClick={() => active && ops.setLayer(active.id, { locks: { ...locks, [k]: !locks[k] } }, 'Lock')}>
+    <button
+      className="lp-icon-btn"
+      aria-pressed={!!locks[k]}
+      title={title}
+      aria-label={title}
+      disabled={!active}
+      onClick={() => active && ops.setLayer(active.id, { locks: { ...locks, [k]: !locks[k] } }, 'Lock')}
+    >
       {icon}
     </button>
   );
@@ -155,15 +185,29 @@ export function LayersPanel() {
   return (
     <div className="lp-layers">
       <div className="lp-layers-top">
-        <Select value={active?.blend ?? 'normal'} options={active?.kind === 'group' ? [['passThrough' as BlendMode, 'Pass Through'], ...BLEND_OPTIONS] : BLEND_OPTIONS} onChange={(v) => {
-          if (!active) return;
-          if (active.kind === 'group') {
-            if ((v as string) === 'passThrough') return ops.setLayer(active.id, { passThrough: true } as Partial<Layer>, 'Blending Change');
-            return ops.setLayer(active.id, { blend: v, passThrough: false } as Partial<Layer>, 'Blending Change');
-          }
-          ops.setLayer(active.id, { blend: v }, 'Blending Change');
-        }} title="Blend mode" />
-        <NumberField label="Opacity" value={Math.round((opacityDraft ?? active?.opacity ?? 1) * 100)} min={0} max={100} suffix="%" width={40} disabled={!active} onChange={(v) => setActive({ opacity: v / 100 }, 'Opacity')} />
+        <Select
+          value={active?.blend ?? 'normal'}
+          options={active?.kind === 'group' ? [['passThrough' as BlendMode, 'Pass Through'], ...BLEND_OPTIONS] : BLEND_OPTIONS}
+          onChange={(v) => {
+            if (!active) return;
+            if (active.kind === 'group') {
+              if ((v as string) === 'passThrough') return ops.setLayer(active.id, { passThrough: true } as Partial<Layer>, 'Blending Change');
+              return ops.setLayer(active.id, { blend: v, passThrough: false } as Partial<Layer>, 'Blending Change');
+            }
+            ops.setLayer(active.id, { blend: v }, 'Blending Change');
+          }}
+          title="Blend mode"
+        />
+        <NumberField
+          label="Opacity"
+          value={Math.round((opacityDraft ?? active?.opacity ?? 1) * 100)}
+          min={0}
+          max={100}
+          suffix="%"
+          width={40}
+          disabled={!active}
+          onChange={(v) => setActive({ opacity: v / 100 }, 'Opacity')}
+        />
         <span />
         <span className="lp-locks">
           <span style={{ marginRight: 4 }}>Lock</span>
@@ -172,7 +216,16 @@ export function LayersPanel() {
           {lockBtn('position', 'Lock position', <MoveIcon size={14} />)}
           {lockBtn('all', 'Lock all', locks.all ? <Lock size={14} /> : <Unlock size={14} />)}
           <span style={{ flex: 1 }} />
-          <NumberField label="Fill" value={Math.round((active?.fill ?? 1) * 100)} min={0} max={100} suffix="%" width={40} disabled={!active} onChange={(v) => setActive({ fill: v / 100 }, 'Fill Opacity')} />
+          <NumberField
+            label="Fill"
+            value={Math.round((active?.fill ?? 1) * 100)}
+            min={0}
+            max={100}
+            suffix="%"
+            width={40}
+            disabled={!active}
+            onChange={(v) => setActive({ fill: v / 100 }, 'Fill Opacity')}
+          />
         </span>
       </div>
       <div
@@ -326,10 +379,13 @@ export function LayersPanel() {
                     </span>
                   </>
                 )}
-                <span className="lp-name" onDoubleClick={(e) => {
-                  e.stopPropagation();
-                  setRenaming(l.id);
-                }}>
+                <span
+                  className="lp-name"
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    setRenaming(l.id);
+                  }}
+                >
                   {renaming === l.id ? (
                     <input
                       className="lp-input"
@@ -412,7 +468,13 @@ export function LayersPanel() {
         <button className="lp-icon-btn" title="Add a layer style" aria-label="Add a layer style" disabled={!active} onClick={() => openDialog('layerStyle')}>
           <span style={{ fontStyle: 'italic', fontWeight: 700, fontSize: 12 }}>fx</span>
         </button>
-        <button className="lp-icon-btn" title="Add a mask (Alt: hide all)" aria-label="Add a mask" disabled={!active || !!active.mask} onClick={(e) => ops.addMask(s.doc.selection ? (e.altKey ? 'hideSelection' : 'selection') : e.altKey ? 'hide' : 'reveal')}>
+        <button
+          className="lp-icon-btn"
+          title="Add a mask (Alt: hide all)"
+          aria-label="Add a mask"
+          disabled={!active || !!active.mask}
+          onClick={(e) => ops.addMask(s.doc.selection ? (e.altKey ? 'hideSelection' : 'selection') : e.altKey ? 'hide' : 'reveal')}
+        >
           <span style={{ position: 'relative', display: 'inline-flex' }}>
             <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
               <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" fill="none" stroke="currentColor" />
@@ -426,7 +488,11 @@ export function LayersPanel() {
           aria-label="New fill or adjustment layer"
           onClick={(e) => {
             const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-            setMenu({ x: r.left, y: r.top - 420, entries: ['layer.fillSolid', 'layer.fillGradient', 'layer.fillPattern', '-', ...ADJUSTMENT_ORDER.map((t) => `layer.adj.${t}`)] });
+            setMenu({
+              x: r.left,
+              y: r.top - 420,
+              entries: ['layer.fillSolid', 'layer.fillGradient', 'layer.fillPattern', '-', ...ADJUSTMENT_ORDER.map((t) => `layer.adj.${t}`)],
+            });
           }}
         >
           <Circle size={15} style={{ clipPath: 'inset(0 50% 0 0)' }} fill="currentColor" />

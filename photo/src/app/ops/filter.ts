@@ -59,7 +59,13 @@ async function filtered(id: string, params: Params, raster: Raster, onProgress?:
     }
     src = rgba;
   }
-  const out = await runFilterAsync(id, { w: read.w, h: read.h, c: 4, data: src.slice() }, p, { width: s.doc.width, height: s.doc.height, ox: read.x, oy: read.y }, onProgress);
+  const out = await runFilterAsync(
+    id,
+    { w: read.w, h: read.h, c: 4, data: src.slice() },
+    p,
+    { width: s.doc.width, height: s.doc.height, ox: read.x, oy: read.y },
+    onProgress,
+  );
   const sel = selectionMask(s.doc);
   const res = new Float32Array(work.w * work.h * channels);
   for (let y = 0; y < work.h; y++)
@@ -132,7 +138,11 @@ export async function applyFilter(id: string, params: Params = {}, label?: strin
   const name = label ?? def.name;
   if (t.kind === 'smart' && def.smart !== false) {
     const l = t.l as unknown as SmartLayer;
-    const next: SmartLayer = { ...l, filters: [...l.filters, { id: uid('sf'), filter: id, params: { ...defaults(def), ...params }, visible: true, blend: 'normal', opacity: 1 }], filtersVisible: true };
+    const next: SmartLayer = {
+      ...l,
+      filters: [...l.filters, { id: uid('sf'), filter: id, params: { ...defaults(def), ...params }, visible: true, blend: 'normal', opacity: 1 }],
+      filtersVisible: true,
+    };
     const drawn = await busy(`${name}…`, () => rerender(next, s.doc));
     change(name, 'filter', (d) => ({ ...d, layers: updateLayer(d.layers, l.id, () => drawn) }));
     return;

@@ -311,7 +311,9 @@ function ProfileDialog({ mode, onClose }: { mode: 'assign' | 'convert'; onClose:
         <Select value={id} options={PROFILES.map((p) => [p.id, p.name] as [string, string])} onChange={setId} />
       </div>
       <p className="lp-note" style={{ marginBottom: 0 }}>
-        {mode === 'assign' ? 'Assigning keeps the numbers and changes how they look.' : 'Converting keeps the look and changes the numbers (relative colorimetric).'}
+        {mode === 'assign'
+          ? 'Assigning keeps the numbers and changes how they look.'
+          : 'Converting keeps the look and changes the numbers (relative colorimetric).'}
       </p>
     </Dialog>
   );
@@ -325,7 +327,13 @@ function FileInfoDialog({ onClose }: { onClose: () => void }) {
     <>
       <label>{label}</label>
       {area ? (
-        <textarea className="lp-input" style={{ height: 70, padding: 6 }} value={meta[k] ?? ''} onChange={(e) => setMeta({ ...meta, [k]: e.target.value })} onKeyDown={(e) => e.stopPropagation()} />
+        <textarea
+          className="lp-input"
+          style={{ height: 70, padding: 6 }}
+          value={meta[k] ?? ''}
+          onChange={(e) => setMeta({ ...meta, [k]: e.target.value })}
+          onKeyDown={(e) => e.stopPropagation()}
+        />
       ) : (
         <input className="lp-input" value={meta[k] ?? ''} onChange={(e) => setMeta({ ...meta, [k]: e.target.value })} onKeyDown={(e) => e.stopPropagation()} />
       )}

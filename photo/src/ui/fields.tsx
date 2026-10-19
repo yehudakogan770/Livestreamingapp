@@ -143,7 +143,17 @@ export function Slider({
   return (
     <div className="lp-slider">
       <label>{label}</label>
-      <NumberField value={value * scale} min={min * scale} max={max * scale} step={step * scale} digits={digits} suffix={suffix} onChange={(v) => onChange(v / scale)} onCommit={onCommit ? (v) => onCommit(v / scale) : undefined} width={52} />
+      <NumberField
+        value={value * scale}
+        min={min * scale}
+        max={max * scale}
+        step={step * scale}
+        digits={digits}
+        suffix={suffix}
+        onChange={(v) => onChange(v / scale)}
+        onCommit={onCommit ? (v) => onCommit(v / scale) : undefined}
+        width={52}
+      />
       <input
         type="range"
         aria-label={label}
@@ -159,7 +169,21 @@ export function Slider({
   );
 }
 
-export function Select<T extends string | number>({ value, options, onChange, label, title, width }: { value: T; options: readonly (readonly [T, string])[]; onChange: (v: T) => void; label?: string; title?: string; width?: number }) {
+export function Select<T extends string | number>({
+  value,
+  options,
+  onChange,
+  label,
+  title,
+  width,
+}: {
+  value: T;
+  options: readonly (readonly [T, string])[];
+  onChange: (v: T) => void;
+  label?: string;
+  title?: string;
+  width?: number;
+}) {
   const sel = (
     <select
       className="lp-select"
@@ -198,7 +222,17 @@ export function Check({ label, checked, onChange, title }: { label: string; chec
   );
 }
 
-export function Seg<T extends string>({ value, options, onChange, label }: { value: T; options: readonly { v: T; label: string; icon?: ReactNode }[]; onChange: (v: T) => void; label: string }) {
+export function Seg<T extends string>({
+  value,
+  options,
+  onChange,
+  label,
+}: {
+  value: T;
+  options: readonly { v: T; label: string; icon?: ReactNode }[];
+  onChange: (v: T) => void;
+  label: string;
+}) {
   return (
     <span className="lp-seg" role="group" aria-label={label}>
       {options.map((o) => (
@@ -211,7 +245,15 @@ export function Seg<T extends string>({ value, options, onChange, label }: { val
 }
 
 export function ColorWell({ color, onClick, title, size = 22 }: { color: readonly number[]; onClick?: () => void; title: string; size?: number }) {
-  return <button className="lp-swatch" title={title} aria-label={title} onClick={onClick} style={{ background: toHex(color as [number, number, number]), width: size, height: size }} />;
+  return (
+    <button
+      className="lp-swatch"
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      style={{ background: toHex(color as [number, number, number]), width: size, height: size }}
+    />
+  );
 }
 
 export function Dialog({

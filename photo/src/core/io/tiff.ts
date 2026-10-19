@@ -263,7 +263,7 @@ export async function decodeImageIFD(bytes: Uint8Array, le: boolean, ifd: IFD): 
   const across = Math.ceil(W / tw),
     down = Math.ceil(H / th);
   const blocksPerPlane = tiled ? across * down : Math.ceil(H / th);
-  const maxv = isFloat ? 1 : (2 ** bps) - 1;
+  const maxv = isFloat ? 1 : 2 ** bps - 1;
   for (let p = 0; p < planes; p++) {
     for (let b = 0; b < blocksPerPlane; b++) {
       const idx = p * blocksPerPlane + b;
@@ -370,7 +370,17 @@ export async function decodeImageIFD(bytes: Uint8Array, le: boolean, ifd: IFD): 
   const resolution = xres ? Math.round(unit === 3 ? xres * 2.54 : xres) : undefined;
   const notes: string[] = [];
   if (photo === 5) notes.push('This CMYK TIFF was converted to RGB.');
-  return { width: W, height: H, depth: depth as 8 | 16 | 32, data, icc: icc ? icc.slice() : undefined, resolution, hasAlpha: alphaIdx >= 0, gray: photo <= 1, notes };
+  return {
+    width: W,
+    height: H,
+    depth: depth as 8 | 16 | 32,
+    data,
+    icc: icc ? icc.slice() : undefined,
+    resolution,
+    hasAlpha: alphaIdx >= 0,
+    gray: photo <= 1,
+    notes,
+  };
 }
 
 function halfToFloat(h: number): number {
@@ -390,8 +400,10 @@ function unpredict(raw: Uint8Array, predictor: number, w: number, h: number, spp
     for (let y = 0; y < h; y++) {
       const row = y * rowBytes;
       if (bps === 8) for (let i = spp; i < w * spp; i++) out[row + i] = (out[row + i]! + out[row + i - spp]!) & 255;
-      else if (bps === 16) for (let i = spp; i < w * spp; i++) dv.setUint16(row + i * 2, (dv.getUint16(row + i * 2, le) + dv.getUint16(row + (i - spp) * 2, le)) & 0xffff, le);
-      else if (bps === 32) for (let i = spp; i < w * spp; i++) dv.setUint32(row + i * 4, (dv.getUint32(row + i * 4, le) + dv.getUint32(row + (i - spp) * 4, le)) >>> 0, le);
+      else if (bps === 16)
+        for (let i = spp; i < w * spp; i++) dv.setUint16(row + i * 2, (dv.getUint16(row + i * 2, le) + dv.getUint16(row + (i - spp) * 2, le)) & 0xffff, le);
+      else if (bps === 32)
+        for (let i = spp; i < w * spp; i++) dv.setUint32(row + i * 4, (dv.getUint32(row + i * 4, le) + dv.getUint32(row + (i - spp) * 4, le)) >>> 0, le);
     }
     return out;
   }
@@ -471,7 +483,11 @@ export async function encodeTIFF(w: number, h: number, rgba: Uint8Array | Uint16
   add(273, 4, new Array(strips.length).fill(0));
   add(277, 3, [spp]);
   add(278, 4, [rowsPerStrip]);
-  add(279, 4, strips.map((s) => s.length));
+  add(
+    279,
+    4,
+    strips.map((s) => s.length),
+  );
   add(282, 5, [o.resolution ?? 72]);
   add(283, 5, [o.resolution ?? 72]);
   add(284, 3, [1]);

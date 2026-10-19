@@ -85,7 +85,12 @@ export const patchTool: Tool = {
     if (drag) {
       const { ctx } = o;
       ctx.save();
-      for (const p of drag.outline) drawPolyline(o, p.map((v, i) => v + (i % 2 ? drag!.dy : drag!.dx)), true);
+      for (const p of drag.outline)
+        drawPolyline(
+          o,
+          p.map((v, i) => v + (i % 2 ? drag!.dy : drag!.dx)),
+          true,
+        );
       ctx.restore();
     }
   },

@@ -14,9 +14,30 @@ import { ColorPickerDialog } from './ColorDialogs';
 
 type Unit = 'px' | 'in' | 'cm' | 'mm' | 'pt' | 'percent';
 
-const toPx = (v: number, u: Unit, res: number, base = 0) => (u === 'px' ? v : u === 'in' ? v * res : u === 'cm' ? (v / 2.54) * res : u === 'mm' ? (v / 25.4) * res : u === 'pt' ? (v / 72) * res : (v / 100) * base);
-const fromPx = (px: number, u: Unit, res: number, base = 0) => (u === 'px' ? px : u === 'in' ? px / res : u === 'cm' ? (px / res) * 2.54 : u === 'mm' ? (px / res) * 25.4 : u === 'pt' ? (px / res) * 72 : base ? (px / base) * 100 : 100);
-const UNIT_OPTS = (percent: boolean): [Unit, string][] => [...(percent ? ([['percent', 'Percent']] as [Unit, string][]) : []), ['px', 'Pixels'], ['in', 'Inches'], ['cm', 'Centimeters'], ['mm', 'Millimeters'], ['pt', 'Points']];
+const toPx = (v: number, u: Unit, res: number, base = 0) =>
+  u === 'px' ? v : u === 'in' ? v * res : u === 'cm' ? (v / 2.54) * res : u === 'mm' ? (v / 25.4) * res : u === 'pt' ? (v / 72) * res : (v / 100) * base;
+const fromPx = (px: number, u: Unit, res: number, base = 0) =>
+  u === 'px'
+    ? px
+    : u === 'in'
+      ? px / res
+      : u === 'cm'
+        ? (px / res) * 2.54
+        : u === 'mm'
+          ? (px / res) * 25.4
+          : u === 'pt'
+            ? (px / res) * 72
+            : base
+              ? (px / base) * 100
+              : 100;
+const UNIT_OPTS = (percent: boolean): [Unit, string][] => [
+  ...(percent ? ([['percent', 'Percent']] as [Unit, string][]) : []),
+  ['px', 'Pixels'],
+  ['in', 'Inches'],
+  ['cm', 'Centimeters'],
+  ['mm', 'Millimeters'],
+  ['pt', 'Points'],
+];
 const digitsFor = (u: Unit) => (u === 'px' ? 0 : u === 'percent' ? 1 : 2);
 
 export function NewDocDialog({ onClose, fromClip }: { onClose: () => void; fromClip?: boolean }) {
@@ -34,16 +55,35 @@ export function NewDocDialog({ onClose, fromClip }: { onClose: () => void; fromC
   void fromClip;
   const create = () => {
     onClose();
-    addSession(blankDoc({ name: name || 'Untitled-1', width: Math.round(w), height: Math.round(h), depth, resolution: res, profile: profileById(profile), background: bg, color: [...color, 1] }));
+    addSession(
+      blankDoc({
+        name: name || 'Untitled-1',
+        width: Math.round(w),
+        height: Math.round(h),
+        depth,
+        resolution: res,
+        profile: profileById(profile),
+        background: bg,
+        color: [...color, 1],
+      }),
+    );
   };
   const big = w * h > 200e6;
   return (
-    <Dialog title="New Document" onClose={onClose} width={520} foot={<OkCancel onOk={create} onCancel={onClose} ok="Create" disabled={w < 1 || h < 1 || w > MAX_SIDE || h > MAX_SIDE} />}>
+    <Dialog
+      title="New Document"
+      onClose={onClose}
+      width={520}
+      foot={<OkCancel onOk={create} onCancel={onClose} ok="Create" disabled={w < 1 || h < 1 || w > MAX_SIDE || h > MAX_SIDE} />}
+    >
       <div className="lp-form">
         <label>Preset</label>
         <Select
           value={preset}
-          options={[['', 'Custom'] as [string, string], ...PRESETS.map((p) => [p.name, `${p.group}: ${p.name} (${p.width} × ${p.height})`] as [string, string])]}
+          options={[
+            ['', 'Custom'] as [string, string],
+            ...PRESETS.map((p) => [p.name, `${p.group}: ${p.name} (${p.width} × ${p.height})`] as [string, string]),
+          ]}
           onChange={(v) => {
             setPreset(v);
             const p = PRESETS.find((x) => x.name === v);
@@ -59,11 +99,27 @@ export function NewDocDialog({ onClose, fromClip }: { onClose: () => void; fromC
         <input className="lp-input" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && create()} aria-label="Name" />
         <label>Width</label>
         <span className="lp-inline">
-          <NumberField value={fromPx(w, unit, res)} digits={digitsFor(unit)} min={0.01} max={MAX_SIDE} width={80} onChange={(v) => setW(Math.round(toPx(v, unit, res)))} title="Width" />
+          <NumberField
+            value={fromPx(w, unit, res)}
+            digits={digitsFor(unit)}
+            min={0.01}
+            max={MAX_SIDE}
+            width={80}
+            onChange={(v) => setW(Math.round(toPx(v, unit, res)))}
+            title="Width"
+          />
           <Select value={unit} options={UNIT_OPTS(false)} onChange={setUnit} title="Units" />
         </span>
         <label>Height</label>
-        <NumberField value={fromPx(h, unit, res)} digits={digitsFor(unit)} min={0.01} max={MAX_SIDE} width={80} onChange={(v) => setH(Math.round(toPx(v, unit, res)))} title="Height" />
+        <NumberField
+          value={fromPx(h, unit, res)}
+          digits={digitsFor(unit)}
+          min={0.01}
+          max={MAX_SIDE}
+          width={80}
+          onChange={(v) => setH(Math.round(toPx(v, unit, res)))}
+          title="Height"
+        />
         <label>Resolution</label>
         <NumberField value={res} min={1} max={10000} suffix="pixels/inch" width={80} onChange={setRes} title="Resolution" />
         <label>Color Mode</label>
@@ -163,14 +219,30 @@ export function ImageSizeDialog({ onClose }: { onClose: () => void }) {
         </span>
         <label>Width</label>
         <span className="lp-inline">
-          <NumberField value={fromPx(w, unit, res, d.width)} digits={digitsFor(unit)} min={0.01} max={MAX_SIDE} width={80} onChange={(v) => setWidth(Math.max(1, Math.round(toPx(v, unit, res, d.width))))} title="Width" />
+          <NumberField
+            value={fromPx(w, unit, res, d.width)}
+            digits={digitsFor(unit)}
+            min={0.01}
+            max={MAX_SIDE}
+            width={80}
+            onChange={(v) => setWidth(Math.max(1, Math.round(toPx(v, unit, res, d.width))))}
+            title="Width"
+          />
           <Select value={unit} options={UNIT_OPTS(true)} onChange={setUnit} title="Units" />
           <button className="lp-icon-btn" aria-pressed={link} title="Constrain proportions" aria-label="Constrain proportions" onClick={() => setLink(!link)}>
             {link ? <Link2 size={15} /> : <Unlink2 size={15} />}
           </button>
         </span>
         <label>Height</label>
-        <NumberField value={fromPx(h, unit, res, d.height)} digits={digitsFor(unit)} min={0.01} max={MAX_SIDE} width={80} onChange={(v) => setHeight(Math.max(1, Math.round(toPx(v, unit, res, d.height))))} title="Height" />
+        <NumberField
+          value={fromPx(h, unit, res, d.height)}
+          digits={digitsFor(unit)}
+          min={0.01}
+          max={MAX_SIDE}
+          width={80}
+          onChange={(v) => setHeight(Math.max(1, Math.round(toPx(v, unit, res, d.height))))}
+          title="Height"
+        />
         <label>Resolution</label>
         <NumberField
           value={res}
@@ -224,7 +296,8 @@ export function CanvasSizeDialog({ onClose }: { onClose: () => void }) {
   const ok = () => {
     onClose();
     const st = app.get();
-    const fill: [number, number, number, number] | null = ext === 'transparent' ? null : ext === 'white' ? [1, 1, 1, 1] : ext === 'black' ? [0, 0, 0, 1] : ext === 'fg' ? [...st.fg, 1] : [...st.bg, 1];
+    const fill: [number, number, number, number] | null =
+      ext === 'transparent' ? null : ext === 'white' ? [1, 1, 1, 1] : ext === 'black' ? [0, 0, 0, 1] : ext === 'fg' ? [...st.fg, 1] : [...st.bg, 1];
     void run('image.canvasTo', { w, h, ax, ay, fill });
   };
   return (
@@ -235,9 +308,25 @@ export function CanvasSizeDialog({ onClose }: { onClose: () => void }) {
           {d.width} × {d.height} px
         </span>
         <label>Width</label>
-        <NumberField value={rel ? w - d.width : w} min={rel ? -d.width + 1 : 1} max={MAX_SIDE} suffix="px" width={80} onChange={(v) => setW(rel ? d.width + v : v)} title="Width" />
+        <NumberField
+          value={rel ? w - d.width : w}
+          min={rel ? -d.width + 1 : 1}
+          max={MAX_SIDE}
+          suffix="px"
+          width={80}
+          onChange={(v) => setW(rel ? d.width + v : v)}
+          title="Width"
+        />
         <label>Height</label>
-        <NumberField value={rel ? h - d.height : h} min={rel ? -d.height + 1 : 1} max={MAX_SIDE} suffix="px" width={80} onChange={(v) => setH(rel ? d.height + v : v)} title="Height" />
+        <NumberField
+          value={rel ? h - d.height : h}
+          min={rel ? -d.height + 1 : 1}
+          max={MAX_SIDE}
+          suffix="px"
+          width={80}
+          onChange={(v) => setH(rel ? d.height + v : v)}
+          title="Height"
+        />
         <label />
         <Check label="Relative" checked={rel} onChange={setRel} />
         <label>Anchor</label>
@@ -274,4 +363,3 @@ export function CanvasSizeDialog({ onClose }: { onClose: () => void }) {
     </Dialog>
   );
 }
-

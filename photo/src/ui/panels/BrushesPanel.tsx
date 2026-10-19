@@ -9,7 +9,21 @@ import { dabCoverage } from '../../core/brush';
 import { Slider, Check, Select } from '../fields';
 import { allPatterns } from '../../core/patterns';
 
-type TipKey = 'brush' | 'pencil' | 'eraser' | 'bgEraser' | 'mixer' | 'colorReplace' | 'clone' | 'pattern' | 'history' | 'heal' | 'spot' | 'remove' | 'focus' | 'tone';
+type TipKey =
+  | 'brush'
+  | 'pencil'
+  | 'eraser'
+  | 'bgEraser'
+  | 'mixer'
+  | 'colorReplace'
+  | 'clone'
+  | 'pattern'
+  | 'history'
+  | 'heal'
+  | 'spot'
+  | 'remove'
+  | 'focus'
+  | 'tone';
 
 export const TIP_KEY: Partial<Record<ToolId, TipKey>> = {
   brush: 'brush',
@@ -76,13 +90,22 @@ export function BrushSettings() {
   const set = (patch: Partial<BrushTip>) => setOpts(k, { tip: { ...tip, ...patch } } as Partial<ToolOptions[typeof k]>);
   return (
     <>
-      {!TIP_KEY[tool] && <div className="lp-note" style={{ marginBottom: 8 }}>Showing the Brush tool’s tip. Pick a painting tool to change its own.</div>}
+      {!TIP_KEY[tool] && (
+        <div className="lp-note" style={{ marginBottom: 8 }}>
+          Showing the Brush tool’s tip. Pick a painting tool to change its own.
+        </div>
+      )}
       <div className="lp-brushes">
         {PRESETS.map((p) => {
           const t = { ...defaultTip(tip.size, 0), ...p.tip, size: tip.size };
           const on = Object.entries(p.tip).every(([key, v]) => key === 'size' || (tip as unknown as Record<string, unknown>)[key] === v);
           return (
-            <button key={p.name} aria-pressed={on} title={p.name} onClick={() => set({ ...defaultTip(tip.size, 0), ...p.tip, size: p.tip.size ?? tip.size, pressureSize: tip.pressureSize })}>
+            <button
+              key={p.name}
+              aria-pressed={on}
+              title={p.name}
+              onClick={() => set({ ...defaultTip(tip.size, 0), ...p.tip, size: p.tip.size ?? tip.size, pressureSize: tip.pressureSize })}
+            >
               <TipPreview tip={t} />
               <span>{p.name}</span>
             </button>
@@ -121,12 +144,40 @@ export function BrushSettings() {
       </div>
       <div className="lp-section-title">Texture</div>
       <div className="lp-panel-row">
-        <Select value={tip.texture ?? ''} options={[['', 'None'] as [string, string], ...allPatterns().map((p) => [p.id, p.name] as [string, string])]} onChange={(v) => set({ texture: v || null })} title="Texture" />
+        <Select
+          value={tip.texture ?? ''}
+          options={[['', 'None'] as [string, string], ...allPatterns().map((p) => [p.id, p.name] as [string, string])]}
+          onChange={(v) => set({ texture: v || null })}
+          title="Texture"
+        />
       </div>
       {tip.texture && (
         <>
           <Slider label="Depth" value={tip.textureDepth} min={0} max={1} step={0.01} scale={100} suffix="%" onChange={(v) => set({ textureDepth: v })} />
           <Slider label="Scale" value={tip.textureScale} min={0.1} max={10} step={0.01} scale={100} suffix="%" onChange={(v) => set({ textureScale: v })} />
+        </>
+      )}
+      <div className="lp-section-title">Dual Brush</div>
+      <div className="lp-panel-row">
+        <Check
+          label="A second tip shapes the first"
+          checked={!!tip.dual}
+          onChange={(v) => set({ dual: v ? { size: Math.max(2, Math.round(tip.size * 0.4)), spacing: 0.3, scatter: 0.6 } : null })}
+        />
+      </div>
+      {tip.dual && (
+        <>
+          <Slider label="Second Tip Size" value={tip.dual.size} min={1} max={1000} suffix="px" onChange={(v) => set({ dual: { ...tip.dual!, size: v } })} />
+          <Slider
+            label="Second Tip Scatter"
+            value={tip.dual.scatter}
+            min={0}
+            max={5}
+            step={0.01}
+            scale={100}
+            suffix="%"
+            onChange={(v) => set({ dual: { ...tip.dual!, scatter: v } })}
+          />
         </>
       )}
       <div className="lp-section-title">Smoothing</div>

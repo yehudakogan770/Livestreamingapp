@@ -67,7 +67,10 @@ export function resetShortcuts(): void {
 export function shortcutLabel(keys: string): string {
   if (!keys) return '';
   if (!isMac) return keys;
-  return keys.replace(/Ctrl\+/g, '⌘').replace(/Alt\+/g, '⌥').replace(/Shift\+/g, '⇧');
+  return keys
+    .replace(/Ctrl\+/g, '⌘')
+    .replace(/Alt\+/g, '⌥')
+    .replace(/Shift\+/g, '⇧');
 }
 
 /** The shortcut string for a key event. */

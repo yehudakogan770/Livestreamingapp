@@ -269,7 +269,12 @@ export class BrushStroke {
     this.spacer = new DabSpacer(o.tip, o.flow, o.opacity, o.seed ?? 1);
     if (o.tip.dual) {
       this.dual = new Map();
-      this.dualSpacer = new DabSpacer({ ...o.tip, size: o.tip.dual.size, spacing: o.tip.dual.spacing, scatter: o.tip.dual.scatter, hardness: 1, sampled: null, dual: null, smoothing: 0 }, 1, 1, (o.seed ?? 1) + 7);
+      this.dualSpacer = new DabSpacer(
+        { ...o.tip, size: o.tip.dual.size, spacing: o.tip.dual.spacing, scatter: o.tip.dual.scatter, hardness: 1, sampled: null, dual: null, smoothing: 0 },
+        1,
+        1,
+        (o.seed ?? 1) + 7,
+      );
     }
   }
 
@@ -326,11 +331,25 @@ export class BrushStroke {
   hold(p: StrokeSample): void {
     if (!this.o.buildUp) return;
     const t = this.o.tip;
-    this.dabs([{ x: p.x, y: p.y, size: t.size * (t.pressureSize ? p.pressure : 1), angle: t.angle, roundness: t.roundness, flow: this.o.flow * 0.25, cap: this.o.opacity }], p);
+    this.dabs(
+      [
+        {
+          x: p.x,
+          y: p.y,
+          size: t.size * (t.pressureSize ? p.pressure : 1),
+          angle: t.angle,
+          roundness: t.roundness,
+          flow: this.o.flow * 0.25,
+          cap: this.o.opacity,
+        },
+      ],
+      p,
+    );
   }
 
   private dabs(dabs: Dab[], p: StrokeSample): void {
-    if (this.dualSpacer && this.dual) for (const d of this.dualSpacer.add(p)) this.stamp(this.dual, d, { ...this.o.tip, hardness: 1, sampled: null, texture: null }, false);
+    if (this.dualSpacer && this.dual)
+      for (const d of this.dualSpacer.add(p)) this.stamp(this.dual, d, { ...this.o.tip, hardness: 1, sampled: null, texture: null }, false);
     for (const d of dabs) {
       if (this.op.perDab) {
         this.flush();

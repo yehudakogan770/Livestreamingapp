@@ -266,17 +266,7 @@ export function dissolveNoise(x: number, y: number): number {
  * mode. `alpha` is the source's alpha already multiplied by opacity and mask.
  * Writes the result into `dst` at `o`.
  */
-export function compositePixel(
-  mode: BlendMode,
-  dst: Float32Array,
-  o: number,
-  sr: number,
-  sg: number,
-  sb: number,
-  alpha: number,
-  x = 0,
-  y = 0,
-): void {
+export function compositePixel(mode: BlendMode, dst: Float32Array, o: number, sr: number, sg: number, sb: number, alpha: number, x = 0, y = 0): void {
   if (alpha <= 0) return;
   if (mode === 'dissolve') {
     alpha = dissolveNoise(x, y) < alpha ? 1 : 0;

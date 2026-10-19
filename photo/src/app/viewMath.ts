@@ -61,7 +61,9 @@ export function zoomAt(v: ViewState, factor: number, sx: number, sy: number, min
 }
 
 /** Photoshop's zoom steps. */
-export const ZOOM_STEPS = [0.01, 0.015, 0.02, 0.03, 0.04, 0.05, 0.0625, 0.0833, 0.125, 0.1667, 0.25, 0.3333, 0.5, 0.6667, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 32, 64];
+export const ZOOM_STEPS = [
+  0.01, 0.015, 0.02, 0.03, 0.04, 0.05, 0.0625, 0.0833, 0.125, 0.1667, 0.25, 0.3333, 0.5, 0.6667, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 32, 64,
+];
 
 export function nextZoom(z: number, dir: 1 | -1): number {
   if (dir > 0) return ZOOM_STEPS.find((s) => s > z * 1.001) ?? ZOOM_STEPS[ZOOM_STEPS.length - 1]!;

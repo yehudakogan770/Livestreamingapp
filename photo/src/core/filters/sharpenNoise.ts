@@ -47,7 +47,8 @@ export function smartSharpen(a: Img, amount: number, radius: number, reduceNoise
 export function highPass(a: Img, radius: number): Img {
   const blurred = gaussianBlur(a, radius);
   const out = cloneImg(a);
-  for (let i = 0; i < out.data.length; i += 4) for (let c = 0; c < 3; c++) out.data[i + c] = Math.min(1, Math.max(0, a.data[i + c]! - blurred.data[i + c]! + 0.5));
+  for (let i = 0; i < out.data.length; i += 4)
+    for (let c = 0; c < 3; c++) out.data[i + c] = Math.min(1, Math.max(0, a.data[i + c]! - blurred.data[i + c]! + 0.5));
   return out;
 }
 
@@ -294,7 +295,8 @@ export const SHARPEN_NOISE_FILTERS: FilterDef[] = [
       { key: 'mono', label: 'Monochromatic', type: 'bool', def: false },
       { key: 'seed', label: 'Seed', type: 'seed', def: 1 },
     ],
-    run: (a, p, c) => addNoise(a, num(p, 'amount', 12.5), str(p, 'distribution', 'gaussian') as 'gaussian', bool(p, 'mono'), num(p, 'seed', 1), c.ox ?? 0, c.oy ?? 0),
+    run: (a, p, c) =>
+      addNoise(a, num(p, 'amount', 12.5), str(p, 'distribution', 'gaussian') as 'gaussian', bool(p, 'mono'), num(p, 'seed', 1), c.ox ?? 0, c.oy ?? 0),
     reach: () => 0,
     dialog: true,
     smart: true,

@@ -309,7 +309,19 @@ export function CanvasArea() {
       sy = e.clientY - r.top;
     const [x, y] = toDoc(sx, sy, s);
     const pressure = e.pointerType === 'pen' ? e.pressure || 0.5 : 1;
-    return { x, y, sx, sy, pressure, button: e.button, shift: e.shiftKey, alt: e.altKey, ctrl: isMac ? e.metaKey : e.ctrlKey, pointerType: e.pointerType, detail: (e as PointerEvent).detail ?? 1 };
+    return {
+      x,
+      y,
+      sx,
+      sy,
+      pressure,
+      button: e.button,
+      shift: e.shiftKey,
+      alt: e.altKey,
+      ctrl: isMac ? e.metaKey : e.ctrlKey,
+      pointerType: e.pointerType,
+      detail: (e as PointerEvent).detail ?? 1,
+    };
   };
 
   const active = useRef<{ tool: Tool; id: number } | null>(null);

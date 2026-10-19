@@ -161,7 +161,9 @@ export function segmentBox(src: Src, rect: Rect): Mask | null {
         y1 = Math.min(h - 1, y0 + 1);
       const tx = sx - x0,
         ty = sy - y0;
-      const v = (small.data[y0 * w + x0]! * (1 - tx) + small.data[y0 * w + x1]! * tx) * (1 - ty) + (small.data[y1 * w + x0]! * (1 - tx) + small.data[y1 * w + x1]! * tx) * ty;
+      const v =
+        (small.data[y0 * w + x0]! * (1 - tx) + small.data[y0 * w + x1]! * tx) * (1 - ty) +
+        (small.data[y1 * w + x0]! * (1 - tx) + small.data[y1 * w + x1]! * tx) * ty;
       up[y * fw + x] = v / 255;
       const i = ((cy0 + y) * W + cx0 + x) * 4;
       flum[y * fw + x] = 0.299 * src.data[i]! + 0.587 * src.data[i + 1]! + 0.114 * src.data[i + 2]!;
@@ -228,7 +230,7 @@ export function selectSubject(src: Src): Mask | null {
   // The box around the salient part (above half the peak, trimmed of outliers).
   const xs: number[] = [],
     ys: number[] = [];
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (sal[y * w + x]! > max * 0.45) xs.push(x), ys.push(y);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (sal[y * w + x]! > max * 0.45) (xs.push(x), ys.push(y));
   if (xs.length < 10) return null;
   xs.sort((a, b) => a - b);
   ys.sort((a, b) => a - b);

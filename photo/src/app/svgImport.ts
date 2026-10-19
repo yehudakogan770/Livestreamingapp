@@ -13,7 +13,10 @@ function svgSize(text: string): { w: number; h: number } {
   const num = (v: string | null) => (v && /^[\d.]+(px)?$/.test(v.trim()) ? parseFloat(v) : NaN);
   let w = num(svg.getAttribute('width')),
     h = num(svg.getAttribute('height'));
-  const vb = svg.getAttribute('viewBox')?.split(/[\s,]+/).map(Number);
+  const vb = svg
+    .getAttribute('viewBox')
+    ?.split(/[\s,]+/)
+    .map(Number);
   if ((!w || !h) && vb && vb.length === 4) {
     w = w || vb[2]!;
     h = h || vb[3]!;
@@ -68,7 +71,23 @@ export async function docFromSvg(name: string, text: string): Promise<Doc> {
     raster: new Raster(8, 4),
   };
   const { renderSmartRaster } = await import('./layerContent');
-  const doc: Doc = { id: uid('doc'), name, width: w, height: h, depth: 8, profile: SRGB, resolution: 72, layers: [layer], selection: null, channels: [], paths: [], guides: [], comps: [], artboards: [], slices: [] };
+  const doc: Doc = {
+    id: uid('doc'),
+    name,
+    width: w,
+    height: h,
+    depth: 8,
+    profile: SRGB,
+    resolution: 72,
+    layers: [layer],
+    selection: null,
+    channels: [],
+    paths: [],
+    guides: [],
+    comps: [],
+    artboards: [],
+    slices: [],
+  };
   layer.raster = renderSmartRaster(layer, doc);
   return doc;
 }

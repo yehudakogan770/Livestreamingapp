@@ -75,7 +75,11 @@ function autoAdjust(mode: 'tone' | 'contrast' | 'color') {
     const r = workRect(s.doc);
     const px = l.raster.read(r);
     const p = autoLevels(histogram(px, 4, Math.max(1, Math.floor((r.w * r.h) / 400000))), mode);
-    await applyFilter('adj:levels', p as unknown as Record<string, unknown>, mode === 'tone' ? 'Auto Tone' : mode === 'contrast' ? 'Auto Contrast' : 'Auto Color');
+    await applyFilter(
+      'adj:levels',
+      p as unknown as Record<string, unknown>,
+      mode === 'tone' ? 'Auto Tone' : mode === 'contrast' ? 'Auto Contrast' : 'Auto Color',
+    );
   };
 }
 
@@ -160,7 +164,12 @@ export function registerCommands(): void {
     },
     { id: 'file.exportAs', label: 'Export As…', keys: 'Ctrl+Alt+Shift+W', run: () => openDialog('export'), enabled: doc },
     { id: 'file.quickExport', label: 'Quick Export as PNG', run: () => void files.quickExport(), enabled: doc },
-    { id: 'file.exportArtboards', label: 'Artboards to Files…', run: () => openDialog('export', { parts: 'artboards' }), enabled: () => !!current()?.doc.artboards.length },
+    {
+      id: 'file.exportArtboards',
+      label: 'Artboards to Files…',
+      run: () => openDialog('export', { parts: 'artboards' }),
+      enabled: () => !!current()?.doc.artboards.length,
+    },
     { id: 'file.exportSlices', label: 'Slices to Files…', run: () => openDialog('export', { parts: 'slices' }), enabled: () => !!current()?.doc.slices.length },
     { id: 'file.sendLumora', label: 'Send to Lumora', run: () => sendTo('lumora'), enabled: doc },
     { id: 'file.sendStudio', label: 'Send to Lumora Studio', run: () => sendTo('studio'), enabled: doc },
@@ -187,14 +196,41 @@ export function registerCommands(): void {
     { id: 'edit.copyMerged', label: 'Copy Merged', keys: 'Ctrl+Shift+C', enabled: doc, run: () => edit.copy(true), record: true },
     { id: 'edit.paste', label: 'Paste', keys: 'Ctrl+V', run: () => void pasteAny(false), record: true },
     { id: 'edit.pasteInPlace', label: 'Paste in Place', keys: 'Ctrl+Shift+V', run: () => void pasteAny(true), enabled: doc, record: true },
-    { id: 'edit.pasteInto', label: 'Paste Into', keys: 'Ctrl+Alt+Shift+V', run: () => edit.pasteInto(), enabled: () => selection() && edit.hasClip(), record: true },
+    {
+      id: 'edit.pasteInto',
+      label: 'Paste Into',
+      keys: 'Ctrl+Alt+Shift+V',
+      run: () => edit.pasteInto(),
+      enabled: () => selection() && edit.hasClip(),
+      record: true,
+    },
     { id: 'edit.clear', label: 'Clear', keys: 'Delete', run: () => edit.clearPixels(), enabled: layer, record: true },
     { id: 'edit.clear2', label: 'Clear', keys: 'Backspace', run: () => edit.clearPixels(), enabled: layer },
     { id: 'edit.fill', label: 'Fill…', keys: 'Shift+F5', run: () => openDialog('fill'), enabled: pixelLayer },
-    { id: 'edit.fillFg', label: 'Fill with Foreground Color', keys: 'Alt+Backspace', run: () => edit.fillSelection({ use: 'fg', mode: 'normal', opacity: 1, preserveTransparency: false }), enabled: pixelLayer, record: true },
-    { id: 'edit.fillBg', label: 'Fill with Background Color', keys: 'Ctrl+Backspace', run: () => edit.fillSelection({ use: 'bg', mode: 'normal', opacity: 1, preserveTransparency: false }), enabled: pixelLayer, record: true },
+    {
+      id: 'edit.fillFg',
+      label: 'Fill with Foreground Color',
+      keys: 'Alt+Backspace',
+      run: () => edit.fillSelection({ use: 'fg', mode: 'normal', opacity: 1, preserveTransparency: false }),
+      enabled: pixelLayer,
+      record: true,
+    },
+    {
+      id: 'edit.fillBg',
+      label: 'Fill with Background Color',
+      keys: 'Ctrl+Backspace',
+      run: () => edit.fillSelection({ use: 'bg', mode: 'normal', opacity: 1, preserveTransparency: false }),
+      enabled: pixelLayer,
+      record: true,
+    },
     { id: 'edit.stroke', label: 'Stroke…', run: () => openDialog('stroke'), enabled: pixelLayer },
-    { id: 'edit.contentAwareFill', label: 'Content-Aware Fill', run: () => void import('../app/ops/heal').then((m) => m.contentAwareFill()), enabled: () => selection() && pixelLayer(), record: true },
+    {
+      id: 'edit.contentAwareFill',
+      label: 'Content-Aware Fill',
+      run: () => void import('../app/ops/heal').then((m) => m.contentAwareFill()),
+      enabled: () => selection() && pixelLayer(),
+      record: true,
+    },
     { id: 'edit.contentAwareScale', label: 'Content-Aware Scale…', keys: 'Ctrl+Alt+Shift+C', run: () => openDialog('contentAwareScale'), enabled: pixelLayer },
     { id: 'edit.freeTransform', label: 'Free Transform', keys: 'Ctrl+T', run: () => freeTransform('free'), enabled: layer },
     { id: 'edit.warp', label: 'Warp', run: () => freeTransform('warp'), enabled: layer },
@@ -204,8 +240,17 @@ export function registerCommands(): void {
     { id: 'edit.rot90ccw', label: 'Rotate 90° Counter Clockwise', run: () => quickTransform('rot90ccw'), enabled: layer, record: true },
     { id: 'edit.flipH', label: 'Flip Horizontal', run: () => quickTransform('flipH'), enabled: layer, record: true },
     { id: 'edit.flipV', label: 'Flip Vertical', run: () => quickTransform('flipV'), enabled: layer, record: true },
-    { id: 'edit.definePattern', label: 'Define Pattern…', run: () => openDialog('prompt', { title: 'Pattern Name', value: 'Pattern 1', ok: (n: string) => edit.definePattern(n) }), enabled: doc },
-    { id: 'edit.defineBrush', label: 'Define Brush Preset…', run: () => openDialog('prompt', { title: 'Brush Name', value: 'Brush 1', ok: (n: string) => saveBrushPreset(n) }) },
+    {
+      id: 'edit.definePattern',
+      label: 'Define Pattern…',
+      run: () => openDialog('prompt', { title: 'Pattern Name', value: 'Pattern 1', ok: (n: string) => edit.definePattern(n) }),
+      enabled: doc,
+    },
+    {
+      id: 'edit.defineBrush',
+      label: 'Define Brush Preset…',
+      run: () => openDialog('prompt', { title: 'Brush Name', value: 'Brush 1', ok: (n: string) => saveBrushPreset(n) }),
+    },
     { id: 'edit.shortcuts', label: 'Keyboard Shortcuts…', keys: 'Ctrl+Alt+Shift+K', run: () => openDialog('shortcuts') },
     { id: 'edit.prefs', label: 'Preferences…', keys: 'Ctrl+K', run: () => openDialog('prefs') },
 
@@ -221,7 +266,18 @@ export function registerCommands(): void {
     { id: 'image.rot180', label: '180°', run: () => image.rotateCanvas(180), enabled: doc, record: true },
     { id: 'image.rot90cw', label: '90° Clockwise', run: () => image.rotateCanvas(90), enabled: doc, record: true },
     { id: 'image.rot90ccw', label: '90° Counter Clockwise', run: () => image.rotateCanvas(-90), enabled: doc, record: true },
-    { id: 'image.rotArbitrary', label: 'Arbitrary…', run: () => openDialog('prompt', { title: 'Rotate Canvas (degrees clockwise)', value: '0', number: true, ok: (v: string) => image.rotateCanvas(parseFloat(v) || 0) }), enabled: doc },
+    {
+      id: 'image.rotArbitrary',
+      label: 'Arbitrary…',
+      run: () =>
+        openDialog('prompt', {
+          title: 'Rotate Canvas (degrees clockwise)',
+          value: '0',
+          number: true,
+          ok: (v: string) => image.rotateCanvas(parseFloat(v) || 0),
+        }),
+      enabled: doc,
+    },
     { id: 'image.flipH', label: 'Flip Canvas Horizontal', run: () => image.flipCanvas(true), enabled: doc, record: true },
     { id: 'image.flipV', label: 'Flip Canvas Vertical', run: () => image.flipCanvas(false), enabled: doc, record: true },
     { id: 'image.crop', label: 'Crop', run: () => image.cropToSelection(), enabled: selection, record: true },
@@ -241,7 +297,11 @@ export function registerCommands(): void {
       (t): Command => ({
         id: `image.adj.${t}`,
         label: `${ADJUSTMENT_NAMES[t]}${t === 'invert' ? '' : '…'}`,
-        keys: ({ levels: 'Ctrl+L', curves: 'Ctrl+M', hueSaturation: 'Ctrl+U', colorBalance: 'Ctrl+B', blackWhite: 'Ctrl+Alt+Shift+B', invert: 'Ctrl+I' } as Partial<Record<AdjustmentType, string>>)[t],
+        keys: (
+          { levels: 'Ctrl+L', curves: 'Ctrl+M', hueSaturation: 'Ctrl+U', colorBalance: 'Ctrl+B', blackWhite: 'Ctrl+Alt+Shift+B', invert: 'Ctrl+I' } as Partial<
+            Record<AdjustmentType, string>
+          >
+        )[t],
         run: adjustPixels(t),
         enabled: canFilter,
         record: t === 'invert',
@@ -253,14 +313,32 @@ export function registerCommands(): void {
     { id: 'layer.newQuick', label: 'New Layer', keys: 'Ctrl+Alt+Shift+N', run: () => void layers.newLayer(), enabled: doc, record: true },
     { id: 'layer.group', label: 'Group Layers', keys: 'Ctrl+G', run: () => layers.groupSelected(), enabled: layer, record: true },
     { id: 'layer.newGroup', label: 'Group', run: () => layers.newGroup(), enabled: doc, record: true },
-    { id: 'layer.ungroup', label: 'Ungroup Layers', keys: 'Ctrl+Shift+G', run: () => layers.ungroup(), enabled: () => current()?.activeLayer()?.kind === 'group', record: true },
+    {
+      id: 'layer.ungroup',
+      label: 'Ungroup Layers',
+      keys: 'Ctrl+Shift+G',
+      run: () => layers.ungroup(),
+      enabled: () => current()?.activeLayer()?.kind === 'group',
+      record: true,
+    },
     { id: 'layer.viaCopy', label: 'Layer via Copy', keys: 'Ctrl+J', run: () => layers.layerVia(false), enabled: layer, record: true },
     { id: 'layer.viaCut', label: 'Layer via Cut', keys: 'Ctrl+Shift+J', run: () => layers.layerVia(true), enabled: pixelLayer, record: true },
     { id: 'layer.duplicate', label: 'Duplicate Layer', run: () => layers.duplicate(), enabled: layer, record: true },
     { id: 'layer.delete', label: 'Delete Layer', run: () => layers.deleteLayers(), enabled: layer, record: true },
-    { id: 'layer.fromBackground', label: 'Layer from Background', run: () => layers.layerFromBackground(), enabled: () => !!current()?.activeLayer()?.locks.position },
+    {
+      id: 'layer.fromBackground',
+      label: 'Layer from Background',
+      run: () => layers.layerFromBackground(),
+      enabled: () => !!current()?.activeLayer()?.locks.position,
+    },
     { id: 'layer.style', label: 'Blending Options…', run: () => openDialog('layerStyle'), enabled: layer },
-    { id: 'layer.clearStyle', label: 'Clear Layer Style', run: () => current()?.active && layers.setLayer(current()!.active!, { styles: undefined }, 'Clear Layer Style'), enabled: layer, record: true },
+    {
+      id: 'layer.clearStyle',
+      label: 'Clear Layer Style',
+      run: () => current()?.active && layers.setLayer(current()!.active!, { styles: undefined }, 'Clear Layer Style'),
+      enabled: layer,
+      record: true,
+    },
     { id: 'layer.fillSolid', label: 'Solid Color…', run: () => newFillLayer('solid'), enabled: doc },
     { id: 'layer.fillGradient', label: 'Gradient…', run: () => newFillLayer('gradient'), enabled: doc },
     { id: 'layer.fillPattern', label: 'Pattern…', run: () => newFillLayer('pattern'), enabled: doc },
@@ -282,10 +360,22 @@ export function registerCommands(): void {
     { id: 'layer.maskHideSelection', label: 'Hide Selection', run: () => layers.addMask('hideSelection'), enabled: selection, record: true },
     { id: 'layer.maskDelete', label: 'Delete', run: () => layers.deleteMask(false), enabled: () => !!current()?.activeLayer()?.mask, record: true },
     { id: 'layer.maskApply', label: 'Apply', run: () => layers.deleteMask(true), enabled: () => !!current()?.activeLayer()?.mask, record: true },
-    { id: 'layer.maskToggle', label: 'Disable', run: () => layers.toggleMaskEnabled(), enabled: () => !!current()?.activeLayer()?.mask, checked: () => current()?.activeLayer()?.mask?.enabled === false },
+    {
+      id: 'layer.maskToggle',
+      label: 'Disable',
+      run: () => layers.toggleMaskEnabled(),
+      enabled: () => !!current()?.activeLayer()?.mask,
+      checked: () => current()?.activeLayer()?.mask?.enabled === false,
+    },
     { id: 'layer.clip', label: 'Create Clipping Mask', keys: 'Ctrl+Alt+G', run: () => layers.toggleClip(), enabled: layer, record: true },
     { id: 'layer.toSmart', label: 'Convert to Smart Object', run: () => layers.convertToSmart(), enabled: layer, record: true },
-    { id: 'layer.rasterize', label: 'Rasterize Layer', run: () => layers.rasterize(), enabled: () => !!current()?.activeLayer() && current()?.activeLayer()?.kind !== 'pixel', record: true },
+    {
+      id: 'layer.rasterize',
+      label: 'Rasterize Layer',
+      run: () => layers.rasterize(),
+      enabled: () => !!current()?.activeLayer() && current()?.activeLayer()?.kind !== 'pixel',
+      record: true,
+    },
     { id: 'layer.rasterizeStyle', label: 'Rasterize Layer Style', run: () => layers.rasterizeStyle(), enabled: () => !!current()?.activeLayer()?.styles },
     { id: 'layer.front', label: 'Bring to Front', keys: 'Ctrl+Shift+]', run: () => layers.arrange('top'), enabled: layer, record: true },
     { id: 'layer.forward', label: 'Bring Forward', keys: 'Ctrl+]', run: () => layers.arrange('up'), enabled: layer, record: true },
@@ -297,7 +387,14 @@ export function registerCommands(): void {
     { id: 'layer.alignTop', label: 'Top Edges', run: () => layers.align('top'), enabled: layer, record: true },
     { id: 'layer.alignVCenter', label: 'Vertical Centers', run: () => layers.align('vcenter'), enabled: layer, record: true },
     { id: 'layer.alignBottom', label: 'Bottom Edges', run: () => layers.align('bottom'), enabled: layer, record: true },
-    { id: 'layer.mergeDown', label: 'Merge Down', keys: 'Ctrl+E', run: () => ((current()?.selected.length ?? 0) > 1 ? layers.mergeSelected() : layers.mergeDown()), enabled: layer, record: true },
+    {
+      id: 'layer.mergeDown',
+      label: 'Merge Down',
+      keys: 'Ctrl+E',
+      run: () => ((current()?.selected.length ?? 0) > 1 ? layers.mergeSelected() : layers.mergeDown()),
+      enabled: layer,
+      record: true,
+    },
     { id: 'layer.mergeVisible', label: 'Merge Visible', keys: 'Ctrl+Shift+E', run: () => layers.mergeVisible(), enabled: doc, record: true },
     { id: 'layer.stamp', label: 'Stamp Visible', keys: 'Ctrl+Alt+Shift+E', run: () => layers.stampVisible(), enabled: doc, record: true },
     { id: 'layer.flatten', label: 'Flatten Image', run: () => layers.flattenImage(), enabled: doc, record: true },
@@ -318,9 +415,22 @@ export function registerCommands(): void {
     { id: 'select.grow', label: 'Grow', run: () => sel.growSimilar(app.get().opts.wand.tolerance, false), enabled: selection, record: true },
     { id: 'select.similar', label: 'Similar', run: () => sel.growSimilar(app.get().opts.wand.tolerance, true), enabled: selection, record: true },
     { id: 'select.transform', label: 'Transform Selection', run: () => freeTransform('selection'), enabled: selection },
-    { id: 'select.quickMask', label: 'Edit in Quick Mask Mode', keys: 'Q', run: () => sel.toggleQuickMask(), enabled: doc, checked: () => !!current()?.quickMask },
+    {
+      id: 'select.quickMask',
+      label: 'Edit in Quick Mask Mode',
+      keys: 'Q',
+      run: () => sel.toggleQuickMask(),
+      enabled: doc,
+      checked: () => !!current()?.quickMask,
+    },
     { id: 'select.load', label: 'Load Selection…', run: () => openDialog('loadSelection'), enabled: () => !!current()?.doc.channels.length },
-    { id: 'select.save', label: 'Save Selection…', run: () => openDialog('prompt', { title: 'Save Selection', value: `Alpha ${(current()?.doc.channels.length ?? 0) + 1}`, ok: (n: string) => sel.saveSelection(n) }), enabled: selection },
+    {
+      id: 'select.save',
+      label: 'Save Selection…',
+      run: () =>
+        openDialog('prompt', { title: 'Save Selection', value: `Alpha ${(current()?.doc.channels.length ?? 0) + 1}`, ok: (n: string) => sel.saveSelection(n) }),
+      enabled: selection,
+    },
 
     // ---- Filter ----
     { id: 'filter.last', label: lastFilterLabel(), keys: 'Ctrl+Alt+F', run: () => repeatLastFilter(), enabled: () => !!lastFilter && canFilter() },
@@ -391,7 +501,12 @@ export function registerCommands(): void {
       run: () => app.set((s) => ({ screenMode: s.screenMode === 'full' ? 'standard' : 'full' })),
       checked: () => app.get().screenMode === 'full',
     },
-    { id: 'view.theme', label: 'Light Interface', run: () => app.set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })), checked: () => app.get().theme === 'light' },
+    {
+      id: 'view.theme',
+      label: 'Light Interface',
+      run: () => app.set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
+      checked: () => app.get().theme === 'light',
+    },
 
     // ---- Window / Help ----
     { id: 'window.reset', label: 'Reset Essentials', run: () => resetLayout() },
@@ -399,10 +514,40 @@ export function registerCommands(): void {
     { id: 'help.about', label: 'About Lumora Photo', run: () => openDialog('about') },
 
     // ---- dialog results (recorded in actions with their settings) ----
-    { id: 'filter.apply', label: 'Filter', record: true, run: (a) => applyFilter((a as { id: string }).id, (a as { params: Record<string, unknown> }).params, (a as { label?: string }).label), enabled: canFilter },
-    { id: 'select.modifyBy', label: 'Modify Selection', record: true, run: (a) => sel.modify((a as { kind: 'border' }).kind, (a as { amount: number }).amount), enabled: selection },
-    { id: 'image.resizeTo', label: 'Image Size', record: true, run: (a) => { const o = a as { w: number; h: number; method: 'bicubic'; resolution?: number }; return image.imageSize(o.w, o.h, o.method, o.resolution); }, enabled: doc },
-    { id: 'image.canvasTo', label: 'Canvas Size', record: true, run: (a) => { const o = a as { w: number; h: number; ax: number; ay: number; fill: [number, number, number, number] | null }; image.canvasSize(o.w, o.h, o.ax, o.ay, o.fill); }, enabled: doc },
+    {
+      id: 'filter.apply',
+      label: 'Filter',
+      record: true,
+      run: (a) => applyFilter((a as { id: string }).id, (a as { params: Record<string, unknown> }).params, (a as { label?: string }).label),
+      enabled: canFilter,
+    },
+    {
+      id: 'select.modifyBy',
+      label: 'Modify Selection',
+      record: true,
+      run: (a) => sel.modify((a as { kind: 'border' }).kind, (a as { amount: number }).amount),
+      enabled: selection,
+    },
+    {
+      id: 'image.resizeTo',
+      label: 'Image Size',
+      record: true,
+      run: (a) => {
+        const o = a as { w: number; h: number; method: 'bicubic'; resolution?: number };
+        return image.imageSize(o.w, o.h, o.method, o.resolution);
+      },
+      enabled: doc,
+    },
+    {
+      id: 'image.canvasTo',
+      label: 'Canvas Size',
+      record: true,
+      run: (a) => {
+        const o = a as { w: number; h: number; ax: number; ay: number; fill: [number, number, number, number] | null };
+        image.canvasSize(o.w, o.h, o.ax, o.ay, o.fill);
+      },
+      enabled: doc,
+    },
     { id: 'edit.fillWith', label: 'Fill', record: true, run: (a) => edit.fillSelection(a as edit.FillOptions), enabled: pixelLayer },
     { id: 'edit.strokeWith', label: 'Stroke', record: true, run: (a) => edit.strokeSelection(a as edit.StrokeOptions), enabled: pixelLayer },
     {
@@ -425,7 +570,12 @@ export function registerCommands(): void {
     { id: 'key.brushSmaller', label: 'Decrease Brush Size', keys: '[', run: brushStep(-1, false) },
     { id: 'key.brushHarder', label: 'Increase Brush Hardness', keys: 'Shift+]', run: brushStep(1, true) },
     { id: 'key.brushSofter', label: 'Decrease Brush Hardness', keys: 'Shift+[', run: brushStep(-1, true) },
-    { id: 'key.hidePanels', label: 'Show/Hide Panels', keys: 'Tab', run: () => app.set((s) => ({ screenMode: s.screenMode === 'full' ? 'standard' : 'full' })) },
+    {
+      id: 'key.hidePanels',
+      label: 'Show/Hide Panels',
+      keys: 'Tab',
+      run: () => app.set((s) => ({ screenMode: s.screenMode === 'full' ? 'standard' : 'full' })),
+    },
     { id: 'key.nudgeLeft', label: 'Nudge Left', keys: 'ArrowLeft', run: () => moveKey(-1, 0), enabled: doc },
     { id: 'key.nudgeRight', label: 'Nudge Right', keys: 'ArrowRight', run: () => moveKey(1, 0), enabled: doc },
     { id: 'key.nudgeUp', label: 'Nudge Up', keys: 'ArrowUp', run: () => moveKey(0, -1), enabled: doc },
@@ -490,7 +640,25 @@ function pickToolKey(ids: ToolId[], cycle: boolean): void {
   setTool(st.groupTool[cur] && inGroup.includes(st.groupTool[cur]!) ? st.groupTool[cur]! : inGroup[0]!);
 }
 
-const PAINT_TOOLS: ToolId[] = ['brush', 'pencil', 'eraser', 'clone', 'patternStamp', 'historyBrush', 'mixer', 'heal', 'spotHeal', 'blur', 'sharpen', 'smudge', 'dodge', 'burn', 'sponge', 'gradient', 'bucket'];
+const PAINT_TOOLS: ToolId[] = [
+  'brush',
+  'pencil',
+  'eraser',
+  'clone',
+  'patternStamp',
+  'historyBrush',
+  'mixer',
+  'heal',
+  'spotHeal',
+  'blur',
+  'sharpen',
+  'smudge',
+  'dodge',
+  'burn',
+  'sponge',
+  'gradient',
+  'bucket',
+];
 
 function opacityKey(v: number): void {
   const st = app.get();
@@ -589,7 +757,10 @@ function newFillLayer(kind: 'solid' | 'gradient' | 'pattern'): void {
   }
   if (kind === 'gradient') {
     void import('../core/gradient').then((g) => {
-      layers.newFill({ type: 'gradient', gradient: g.fgToBg(st.fg, st.bg), angle: 90, scale: 1, style: 'linear', reverse: false, ox: 0, oy: 0 }, 'Gradient Fill');
+      layers.newFill(
+        { type: 'gradient', gradient: g.fgToBg(st.fg, st.bg), angle: 90, scale: 1, style: 'linear', reverse: false, ox: 0, oy: 0 },
+        'Gradient Fill',
+      );
       openPanel('properties');
     });
     return;

@@ -272,7 +272,8 @@ export function currentGradient(): Gradient {
 
 export const GRADIENT_CHOICES = ['Foreground to Background', 'Foreground to Transparent', ...GRADIENT_PRESETS.map((g) => g.name)];
 
-let grad: { x0: number; y0: number; x1: number; y1: number; tempId: string; target: string | null; editing: FillLayer | null; handle: 0 | 1 | null } | null = null;
+let grad: { x0: number; y0: number; x1: number; y1: number; tempId: string; target: string | null; editing: FillLayer | null; handle: 0 | 1 | null } | null =
+  null;
 
 function gradientLayer(x0: number, y0: number, x1: number, y1: number, id: string, mask: Mask | null): FillLayer {
   const o = app.get().opts.gradient;
@@ -283,7 +284,19 @@ function gradientLayer(x0: number, y0: number, x1: number, y1: number, id: strin
     kind: 'fill',
     blend: o.mode,
     opacity: o.opacity,
-    content: { type: 'gradient', gradient: currentGradient(), angle: 0, scale: 1, style: o.style, reverse: o.reverse, ox: 0, oy: 0, p0: [x0, y0], p1: [x1, y1], dither: o.dither },
+    content: {
+      type: 'gradient',
+      gradient: currentGradient(),
+      angle: 0,
+      scale: 1,
+      style: o.style,
+      reverse: o.reverse,
+      ox: 0,
+      oy: 0,
+      p0: [x0, y0],
+      p1: [x1, y1],
+      dither: o.dither,
+    },
   };
   if (mask) l.mask = { raster: maskToRaster(mask), background: 0, enabled: true, linked: true, density: 1, feather: 0 };
   void s;
@@ -300,9 +313,19 @@ export const gradientTool: Tool = {
     const act = s.activeLayer();
     if (act?.kind === 'fill' && act.content.type === 'gradient' && act.content.p0 && act.content.p1) {
       const r = docPx(9);
-      const h = Math.hypot(e.x - act.content.p0[0], e.y - act.content.p0[1]) < r ? 0 : Math.hypot(e.x - act.content.p1[0], e.y - act.content.p1[1]) < r ? 1 : null;
+      const h =
+        Math.hypot(e.x - act.content.p0[0], e.y - act.content.p0[1]) < r ? 0 : Math.hypot(e.x - act.content.p1[0], e.y - act.content.p1[1]) < r ? 1 : null;
       if (h !== null) {
-        grad = { x0: act.content.p0[0], y0: act.content.p0[1], x1: act.content.p1[0], y1: act.content.p1[1], tempId: act.id, target: null, editing: act, handle: h };
+        grad = {
+          x0: act.content.p0[0],
+          y0: act.content.p0[1],
+          x1: act.content.p1[0],
+          y1: act.content.p1[1],
+          tempId: act.id,
+          target: null,
+          editing: act,
+          handle: h,
+        };
         return;
       }
     }
@@ -381,7 +404,10 @@ export const gradientTool: Tool = {
       return;
     }
     const r = canvasRect(base);
-    const merged = flatten(base, r, [{ ...target, visible: true, opacity: 1, blend: 'normal', mask: undefined, clip: false, styles: undefined } as Layer, { ...layer, clip: false } as Layer]);
+    const merged = flatten(base, r, [
+      { ...target, visible: true, opacity: 1, blend: 'normal', mask: undefined, clip: false, styles: undefined } as Layer,
+      { ...layer, clip: false } as Layer,
+    ]);
     if (target.locks.transparency) {
       const orig = target.raster.read(r);
       for (let i = 3; i < merged.length; i += 4) merged[i] = orig[i]!;
@@ -397,7 +423,8 @@ export const gradientTool: Tool = {
     const { ctx, toScreen } = o;
     let line: [number, number, number, number] | null = grad ? [grad.x0, grad.y0, grad.x1, grad.y1] : null;
     const act = s.activeLayer();
-    if (!line && act?.kind === 'fill' && act.content.type === 'gradient' && act.content.p0 && act.content.p1) line = [act.content.p0[0], act.content.p0[1], act.content.p1[0], act.content.p1[1]];
+    if (!line && act?.kind === 'fill' && act.content.type === 'gradient' && act.content.p0 && act.content.p1)
+      line = [act.content.p0[0], act.content.p0[1], act.content.p1[0], act.content.p1[1]];
     if (!line) return;
     const [a, b] = toScreen(line[0], line[1]);
     const [c, d] = toScreen(line[2], line[3]);
@@ -495,7 +522,9 @@ export const bucketTool: Tool = {
         }
     const ed = new TileEdit(t.raster);
     t.raster.write(b, px, ed, t.channels === 4);
-    s.commit('Paint Bucket', 'bucket', { ...s.doc, layers: t.layerId ? updateLayer(s.doc.layers, t.layerId, (x) => ({ ...x }) as Layer) : s.doc.layers }, [ed.commit(t.channels === 4)]);
+    s.commit('Paint Bucket', 'bucket', { ...s.doc, layers: t.layerId ? updateLayer(s.doc.layers, t.layerId, (x) => ({ ...x }) as Layer) : s.doc.layers }, [
+      ed.commit(t.channels === 4),
+    ]);
     pushRecentColor(color);
     bump();
   },

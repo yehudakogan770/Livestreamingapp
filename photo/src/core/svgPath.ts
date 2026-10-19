@@ -208,7 +208,11 @@ export const CUSTOM_SHAPES: { id: string; name: string; d: string }[] = [
   { id: 'check', name: 'Check Mark', d: 'M8 54 L22 40 L40 58 L80 16 L94 30 L40 86 Z' },
   { id: 'ring', name: 'Ring', d: 'M50 4 A46 46 0 1 1 49.99 4 Z M50 22 A28 28 0 1 0 50.01 22 Z' },
   { id: 'banner', name: 'Banner', d: 'M4 24 L96 24 L84 50 L96 76 L4 76 L16 50 Z' },
-  { id: 'badge', name: 'Badge', d: 'M50 2 L61 14 L77 10 L80 26 L95 33 L88 48 L96 62 L82 70 L80 86 L64 84 L50 96 L36 84 L20 86 L18 70 L4 62 L12 48 L5 33 L20 26 L23 10 L39 14 Z' },
+  {
+    id: 'badge',
+    name: 'Badge',
+    d: 'M50 2 L61 14 L77 10 L80 26 L95 33 L88 48 L96 62 L82 70 L80 86 L64 84 L50 96 L36 84 L20 86 L18 70 L4 62 L12 48 L5 33 L20 26 L23 10 L39 14 Z',
+  },
   { id: 'cross', name: 'Plus', d: 'M38 4 L62 4 L62 38 L96 38 L96 62 L62 62 L62 96 L38 96 L38 62 L4 62 L4 38 L38 38 Z' },
   { id: 'chevron', name: 'Chevron', d: 'M8 8 L52 8 L92 50 L52 92 L8 92 L48 50 Z' },
 ];

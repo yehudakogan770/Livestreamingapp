@@ -24,13 +24,17 @@ export function PathsPanel() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ flex: 1, overflow: 'auto' }}>
         {s.doc.paths.map((p) => (
-          <div key={p.id} className={`lp-row${p.id === activeId ? ' lp-sel' : ''}`} onClick={(e) => {
-            if (e.ctrlKey || e.metaKey) {
-              sel.applySelection(pathMask(s.doc.width, s.doc.height, p.path), 'replace', 'Load Path as Selection');
-              return;
-            }
-            setPathTarget(p.id === activeId ? null : { kind: 'path', id: p.id });
-          }}>
+          <div
+            key={p.id}
+            className={`lp-row${p.id === activeId ? ' lp-sel' : ''}`}
+            onClick={(e) => {
+              if (e.ctrlKey || e.metaKey) {
+                sel.applySelection(pathMask(s.doc.width, s.doc.height, p.path), 'replace', 'Load Path as Selection');
+                return;
+              }
+              setPathTarget(p.id === activeId ? null : { kind: 'path', id: p.id });
+            }}
+          >
             <Spline size={14} style={{ color: 'var(--dim)' }} />
             <span className="lp-grow" style={{ fontStyle: p.name === 'Work Path' ? 'italic' : undefined }} onDoubleClick={() => setRenaming(p.id)}>
               {renaming === p.id ? (
@@ -60,13 +64,31 @@ export function PathsPanel() {
         {!s.doc.paths.length && <div className="lp-empty">Paths drawn with the Pen tool appear here.</div>}
       </div>
       <div className="lp-panel-foot">
-        <button className="lp-icon-btn" title="Fill path with foreground color" aria-label="Fill path" disabled={!activePath} onClick={() => activePath && fillPath(activePath.path, app.get().fg)}>
+        <button
+          className="lp-icon-btn"
+          title="Fill path with foreground color"
+          aria-label="Fill path"
+          disabled={!activePath}
+          onClick={() => activePath && fillPath(activePath.path, app.get().fg)}
+        >
           <PaintBucket size={15} />
         </button>
-        <button className="lp-icon-btn" title="Stroke path with brush" aria-label="Stroke path" disabled={!activePath} onClick={() => activePath && strokePath(activePath.path)}>
+        <button
+          className="lp-icon-btn"
+          title="Stroke path with brush"
+          aria-label="Stroke path"
+          disabled={!activePath}
+          onClick={() => activePath && strokePath(activePath.path)}
+        >
           <Brush size={15} />
         </button>
-        <button className="lp-icon-btn" title="Load path as a selection" aria-label="Load path as a selection" disabled={!activePath} onClick={() => activePath && sel.applySelection(pathMask(s.doc.width, s.doc.height, activePath.path), 'replace', 'Load Path as Selection')}>
+        <button
+          className="lp-icon-btn"
+          title="Load path as a selection"
+          aria-label="Load path as a selection"
+          disabled={!activePath}
+          onClick={() => activePath && sel.applySelection(pathMask(s.doc.width, s.doc.height, activePath.path), 'replace', 'Load Path as Selection')}
+        >
           <CircleDashed size={15} />
         </button>
         <button
@@ -77,7 +99,9 @@ export function PathsPanel() {
           onClick={() => {
             const m = selectionMask(s.doc);
             if (!m) return;
-            const outlines = maskOutline(m).map((pts) => simplify(pts, 1.5)).filter((p) => p.length >= 6);
+            const outlines = maskOutline(m)
+              .map((pts) => simplify(pts, 1.5))
+              .filter((p) => p.length >= 6);
             const subpaths = outlines.flatMap((pts) => smoothPath(pts, true).subpaths);
             const others = s.doc.paths.filter((p) => p.name !== 'Work Path');
             const wp = { id: uid('p'), name: 'Work Path', path: { subpaths } };

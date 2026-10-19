@@ -83,10 +83,13 @@ function MenuList({ items, x, y, onDone, level = 0 }: { items: Item[]; x: number
             onPointerEnter={(e) => {
               clearTimeout(timer.current);
               const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              timer.current = window.setTimeout(() => {
-                setOpen(it.sub ? i : null);
-                setSubPos({ x: r.right - 2, y: r.top - 5 });
-              }, it.sub ? 60 : 120);
+              timer.current = window.setTimeout(
+                () => {
+                  setOpen(it.sub ? i : null);
+                  setSubPos({ x: r.right - 2, y: r.top - 5 });
+                },
+                it.sub ? 60 : 120,
+              );
             }}
             onClick={(e) => {
               if (it.sub) {

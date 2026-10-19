@@ -72,7 +72,8 @@ function warpText(r: Raster, style: string, bend: number): Raster {
     const fx = sx - x0,
       fy = sy - y0;
     const at = (x: number, y: number, k: number) => (x < 0 || y < 0 || x >= b.w || y >= b.h ? 0 : src[(y * b.w + x) * 4 + k]!);
-    for (let k = 0; k < 4; k++) px[o + k] = at(x0, y0, k) * (1 - fx) * (1 - fy) + at(x0 + 1, y0, k) * fx * (1 - fy) + at(x0, y0 + 1, k) * (1 - fx) * fy + at(x0 + 1, y0 + 1, k) * fx * fy;
+    for (let k = 0; k < 4; k++)
+      px[o + k] = at(x0, y0, k) * (1 - fx) * (1 - fy) + at(x0 + 1, y0, k) * fx * (1 - fy) + at(x0, y0 + 1, k) * (1 - fx) * fy + at(x0 + 1, y0 + 1, k) * fx * fy;
   };
   for (let y = 0; y < out.h; y++)
     for (let x = 0; x < out.w; x++) {
@@ -107,14 +108,21 @@ export function renderShapeRaster(l: ShapeLayer, doc: Pick<Doc, 'depth' | 'profi
   ctx.translate(-r.x, -r.y);
   const p = new Path2D(pathToSvg(l.path));
   const rule: CanvasFillRule = l.path.rule === 'evenodd' ? 'evenodd' : 'nonzero';
-  const css = (c3: readonly number[], a = 1) => `rgba(${c3.slice(0, 3).map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255)).join(',')},${a})`;
+  const css = (c3: readonly number[], a = 1) =>
+    `rgba(${c3
+      .slice(0, 3)
+      .map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255))
+      .join(',')},${a})`;
   if (l.fillGradient) {
     const g = l.fillGradient;
     const a = (g.angle * Math.PI) / 180;
     const cx = pb.x + pb.w / 2,
       cy = pb.y + pb.h / 2;
     const half = (Math.abs(Math.cos(a)) * pb.w + Math.abs(Math.sin(a)) * pb.h) / 2;
-    const grad = g.style === 'radial' ? ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(pb.w, pb.h) / 2) : ctx.createLinearGradient(cx - Math.cos(a) * half, cy + Math.sin(a) * half, cx + Math.cos(a) * half, cy - Math.sin(a) * half);
+    const grad =
+      g.style === 'radial'
+        ? ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(pb.w, pb.h) / 2)
+        : ctx.createLinearGradient(cx - Math.cos(a) * half, cy + Math.sin(a) * half, cx + Math.cos(a) * half, cy - Math.sin(a) * half);
     const ramp = gradientRamp(g.gradient, 32);
     for (let i = 0; i < 32; i++) grad.addColorStop(i / 31, css([ramp[i * 4]!, ramp[i * 4 + 1]!, ramp[i * 4 + 2]!], ramp[i * 4 + 3]!));
     ctx.fillStyle = grad;

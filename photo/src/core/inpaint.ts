@@ -126,7 +126,12 @@ function solveLevel(f: Field, hole: Uint8Array, valid: Uint8Array, nnf: Int32Arr
   for (let y = P; y < h - P; y++)
     for (let x = P; x < w - P; x++) {
       let ok = true;
-      for (let j = -P; j <= P && ok; j++) for (let i = -P; i <= P; i++) if (!valid[(y + j) * w + x + i]) { ok = false; break; }
+      for (let j = -P; j <= P && ok; j++)
+        for (let i = -P; i <= P; i++)
+          if (!valid[(y + j) * w + x + i]) {
+            ok = false;
+            break;
+          }
       if (ok) {
         okSrc[y * w + x] = 1;
         sources.push(x, y);
@@ -336,10 +341,10 @@ export function healBlend(target: Field, src: Field, hole: Uint8Array): Field {
         for (let k = 0; k < 3; k++) {
           let s = 0,
             c = 0;
-          if (x > 0) (s += filled[(i - 1) * 3 + k]!), c++;
-          if (x < w - 1) (s += filled[(i + 1) * 3 + k]!), c++;
-          if (y > 0) (s += filled[(i - w) * 3 + k]!), c++;
-          if (y < h - 1) (s += filled[(i + w) * 3 + k]!), c++;
+          if (x > 0) ((s += filled[(i - 1) * 3 + k]!), c++);
+          if (x < w - 1) ((s += filled[(i + 1) * 3 + k]!), c++);
+          if (y > 0) ((s += filled[(i - w) * 3 + k]!), c++);
+          if (y < h - 1) ((s += filled[(i + w) * 3 + k]!), c++);
           filled[i * 3 + k] = s / c;
         }
       }

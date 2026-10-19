@@ -127,10 +127,11 @@ export function oilPaint(a: Img, stylization: number, cleanliness: number, scale
 
 export function solarize(a: Img): Img {
   const out = cloneImg(a);
-  for (let i = 0; i < out.data.length; i += 4) for (let c = 0; c < 3; c++) {
-    const v = a.data[i + c]!;
-    out.data[i + c] = v > 0.5 ? 1 - v : v;
-  }
+  for (let i = 0; i < out.data.length; i += 4)
+    for (let c = 0; c < 3; c++) {
+      const v = a.data[i + c]!;
+      out.data[i + c] = v > 0.5 ? 1 - v : v;
+    }
   return out;
 }
 
@@ -272,7 +273,18 @@ export function colorHalftone(a: Img, maxRadius: number, angles: [number, number
 }
 
 /** Tiling value noise (Clouds) in fg/bg colors; seeded so bands and repeats agree. */
-export function clouds(w: number, h: number, fg: [number, number, number], bgc: [number, number, number], seed: number, difference: Img | null, W: number, H: number, ox = 0, oy = 0): Img {
+export function clouds(
+  w: number,
+  h: number,
+  fg: [number, number, number],
+  bgc: [number, number, number],
+  seed: number,
+  difference: Img | null,
+  W: number,
+  H: number,
+  ox = 0,
+  oy = 0,
+): Img {
   const out = img(w, h, 4);
   const hash = (x: number, y: number, o: number) => {
     let n = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(o + seed * 31, 2246822519)) | 0;
@@ -312,7 +324,23 @@ export function clouds(w: number, h: number, fg: [number, number, number], bgc: 
 }
 
 /** Lighting Effects: a spot, point or infinite light over the picture, optionally embossed by luminance. */
-export function lighting(a: Img, kind: 'spot' | 'point' | 'infinite', color: [number, number, number], intensity: number, ambient: number, gloss: number, cx: number, cy: number, radius: number, angle: number, height: number, W: number, H: number, ox = 0, oy = 0): Img {
+export function lighting(
+  a: Img,
+  kind: 'spot' | 'point' | 'infinite',
+  color: [number, number, number],
+  intensity: number,
+  ambient: number,
+  gloss: number,
+  cx: number,
+  cy: number,
+  radius: number,
+  angle: number,
+  height: number,
+  W: number,
+  H: number,
+  ox = 0,
+  oy = 0,
+): Img {
   const out = cloneImg(a);
   const { w, h } = a;
   const R = (radius / 100) * Math.max(W, H);
@@ -493,7 +521,8 @@ export const STYLIZE_FILTERS: FilterDef[] = [
       { key: 'angle', label: 'Lighting Angle', type: 'angle', def: 300 },
       { key: 'shine', label: 'Shine', type: 'number', min: 0, max: 10, step: 0.1, def: 1.5 },
     ],
-    run: (a, p) => oilPaint(a, num(p, 'stylization', 4), num(p, 'cleanliness', 5), num(p, 'scale', 1), num(p, 'bristle', 3), num(p, 'angle', 300), num(p, 'shine', 1.5)),
+    run: (a, p) =>
+      oilPaint(a, num(p, 'stylization', 4), num(p, 'cleanliness', 5), num(p, 'scale', 1), num(p, 'bristle', 3), num(p, 'angle', 300), num(p, 'shine', 1.5)),
     reach: (p) => Math.ceil(num(p, 'stylization', 4) * 1.2 * num(p, 'scale', 1)) + 20,
     dialog: true,
     smart: true,
@@ -632,7 +661,23 @@ export const STYLIZE_FILTERS: FilterDef[] = [
     ],
     run: (a, p, c) => {
       const [u, v] = vec(p, 'center', [0.5, 0.45]);
-      return lighting(a, str(p, 'kind', 'spot') as 'spot', col(p, 'color'), num(p, 'intensity', 45), num(p, 'ambience', 25), num(p, 'gloss', 10), u, v, num(p, 'radius', 60), num(p, 'angle', 300), num(p, 'height'), c.width, c.height, c.ox ?? 0, c.oy ?? 0);
+      return lighting(
+        a,
+        str(p, 'kind', 'spot') as 'spot',
+        col(p, 'color'),
+        num(p, 'intensity', 45),
+        num(p, 'ambience', 25),
+        num(p, 'gloss', 10),
+        u,
+        v,
+        num(p, 'radius', 60),
+        num(p, 'angle', 300),
+        num(p, 'height'),
+        c.width,
+        c.height,
+        c.ox ?? 0,
+        c.oy ?? 0,
+      );
     },
     reach: () => 2,
     dialog: true,

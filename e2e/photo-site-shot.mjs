@@ -23,7 +23,10 @@ const server = createServer((req, res) => {
   res.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream' }).end(readFileSync(file));
 });
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({
+  executablePath: process.env.CHROMIUM_PATH,
+  args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+});
 try {
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   await page.goto(`http://127.0.0.1:${server.address().port}/?debug`);
@@ -42,7 +45,25 @@ try {
     const P = window.__photo;
     const s = P.current();
     const l = s.activeLayer();
-    s.doc = { ...s.doc, layers: s.doc.layers.map((x) => (x.id === l.id ? { ...x, params: { ...x.params, rgb: [[0, 0], [0.25, 0.2], [0.75, 0.82], [1, 1]] } } : x)) };
+    s.doc = {
+      ...s.doc,
+      layers: s.doc.layers.map((x) =>
+        x.id === l.id
+          ? {
+              ...x,
+              params: {
+                ...x.params,
+                rgb: [
+                  [0, 0],
+                  [0.25, 0.2],
+                  [0.75, 0.82],
+                  [1, 1],
+                ],
+              },
+            }
+          : x,
+      ),
+    };
     P.app.set((st) => ({ rev: st.rev + 1 }));
   });
   await page.waitForTimeout(600);

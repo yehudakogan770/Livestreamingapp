@@ -114,7 +114,18 @@ export interface LayerStyles {
 
 export type StyleKey = Exclude<keyof LayerStyles, 'visible'>;
 
-export const STYLE_ORDER: StyleKey[] = ['bevel', 'stroke', 'innerShadow', 'innerGlow', 'satin', 'colorOverlay', 'gradientOverlay', 'patternOverlay', 'outerGlow', 'dropShadow'];
+export const STYLE_ORDER: StyleKey[] = [
+  'bevel',
+  'stroke',
+  'innerShadow',
+  'innerGlow',
+  'satin',
+  'colorOverlay',
+  'gradientOverlay',
+  'patternOverlay',
+  'outerGlow',
+  'dropShadow',
+];
 
 export const STYLE_NAMES: Record<StyleKey, string> = {
   bevel: 'Bevel & Emboss',

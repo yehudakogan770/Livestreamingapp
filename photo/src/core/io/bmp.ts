@@ -18,7 +18,17 @@ export function encodeBMP(width: number, height: number, rgba: Uint8Array, resol
   const ppm = Math.round(resolution / 0.0254);
   const w = new Writer(size, true);
   w.ascii('BM').u32(size).u32(0).u32(dataOff);
-  w.u32(headerSize).i32(width).i32(height).u16(1).u16(bpp).u32(alpha ? 3 : 0).u32(rowBytes * height).i32(ppm).i32(ppm).u32(0).u32(0);
+  w.u32(headerSize)
+    .i32(width)
+    .i32(height)
+    .u16(1)
+    .u16(bpp)
+    .u32(alpha ? 3 : 0)
+    .u32(rowBytes * height)
+    .i32(ppm)
+    .i32(ppm)
+    .u32(0)
+    .u32(0);
   if (alpha) {
     w.u32(0x00ff0000).u32(0x0000ff00).u32(0x000000ff).u32(0xff000000);
     w.ascii('BGRs');
@@ -27,7 +37,9 @@ export function encodeBMP(width: number, height: number, rgba: Uint8Array, resol
   for (let y = height - 1; y >= 0; y--) {
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
-      w.u8(rgba[i + 2]!).u8(rgba[i + 1]!).u8(rgba[i]!);
+      w.u8(rgba[i + 2]!)
+        .u8(rgba[i + 1]!)
+        .u8(rgba[i]!);
       if (alpha) w.u8(rgba[i + 3]!);
     }
     if (!alpha) w.zeros(rowBytes - width * 3);

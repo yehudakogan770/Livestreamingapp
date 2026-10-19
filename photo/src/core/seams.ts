@@ -50,7 +50,8 @@ function findSeam(e: Float32Array, w: number, h: number): Int32Array {
 
 function transpose(a: Img): Img {
   const out = { w: a.h, h: a.w, c: a.c, data: new Float32Array(a.data.length) };
-  for (let y = 0; y < a.h; y++) for (let x = 0; x < a.w; x++) for (let k = 0; k < a.c; k++) out.data[(x * a.h + y) * a.c + k] = a.data[(y * a.w + x) * a.c + k]!;
+  for (let y = 0; y < a.h; y++)
+    for (let x = 0; x < a.w; x++) for (let k = 0; k < a.c; k++) out.data[(x * a.h + y) * a.c + k] = a.data[(y * a.w + x) * a.c + k]!;
   return out;
 }
 

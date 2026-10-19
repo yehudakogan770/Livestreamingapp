@@ -99,8 +99,38 @@ export const DEFAULT_PREFS: Prefs = {
 };
 
 export const DEFAULT_SWATCHES: [number, number, number][] = [
-  '#000000', '#ffffff', '#7f7f7f', '#c0c0c0', '#ed1c24', '#f26522', '#ffde17', '#8dc63f', '#00a651', '#00a99d', '#00aeef', '#0072bc', '#2e3192', '#662d91', '#92278f', '#ec008c',
-  '#f7977a', '#fbad82', '#fff79a', '#c4df9b', '#82ca9c', '#7accc8', '#6dcff6', '#8393ca', '#a187be', '#f49ac1', '#603913', '#8c6239', '#a67c52', '#c69c6d', '#e6d5b8', '#1f2a36',
+  '#000000',
+  '#ffffff',
+  '#7f7f7f',
+  '#c0c0c0',
+  '#ed1c24',
+  '#f26522',
+  '#ffde17',
+  '#8dc63f',
+  '#00a651',
+  '#00a99d',
+  '#00aeef',
+  '#0072bc',
+  '#2e3192',
+  '#662d91',
+  '#92278f',
+  '#ec008c',
+  '#f7977a',
+  '#fbad82',
+  '#fff79a',
+  '#c4df9b',
+  '#82ca9c',
+  '#7accc8',
+  '#6dcff6',
+  '#8393ca',
+  '#a187be',
+  '#f49ac1',
+  '#603913',
+  '#8c6239',
+  '#a67c52',
+  '#c69c6d',
+  '#e6d5b8',
+  '#1f2a36',
 ].map((h) => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255] as [number, number, number]);
 
 const ui = loadJSON(UI_KEY, {
@@ -146,7 +176,19 @@ export const app = new Store<AppState>({
 app.subscribe(() => {
   const s = app.get();
   try {
-    localStorage.setItem(UI_KEY, JSON.stringify({ theme: s.theme, showRulers: s.showRulers, showGrid: s.showGrid, showGuides: s.showGuides, snap: s.snap, showExtras: s.showExtras, swatches: s.swatches, brushPresets: s.brushPresets }));
+    localStorage.setItem(
+      UI_KEY,
+      JSON.stringify({
+        theme: s.theme,
+        showRulers: s.showRulers,
+        showGrid: s.showGrid,
+        showGuides: s.showGuides,
+        snap: s.snap,
+        showExtras: s.showExtras,
+        swatches: s.swatches,
+        brushPresets: s.brushPresets,
+      }),
+    );
     localStorage.setItem(PREFS_KEY, JSON.stringify(s.prefs));
   } catch {
     /* storage full or blocked: settings stay for this visit */

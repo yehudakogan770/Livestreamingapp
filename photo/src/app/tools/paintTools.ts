@@ -49,7 +49,8 @@ export function paintTarget(allowNonPixel = false): Target | null {
     return null;
   }
   // Adjustment and fill layers: paint their mask (as Photoshop does).
-  if ((s.editMask || l.kind === 'adjust' || l.kind === 'fill') && l.mask) return { raster: l.mask.raster, channels: 1, kind: 'mask', lockAlpha: false, isBg: false, layerId: l.id };
+  if ((s.editMask || l.kind === 'adjust' || l.kind === 'fill') && l.mask)
+    return { raster: l.mask.raster, channels: 1, kind: 'mask', lockAlpha: false, isBg: false, layerId: l.id };
   if (l.locks.all || l.locks.pixels) {
     toast('This layer is locked. Unlock it in the Layers panel to paint.');
     return null;
@@ -68,7 +69,7 @@ function selectionFn(): ((x: number, y: number) => number) | null {
   if (!s || s.quickMask || !s.doc.selection) return null;
   const m = s.doc.selection.mask;
   const px = [0];
-  return (x, y) => (m.pixel(x, y, px)[0] ?? 0);
+  return (x, y) => m.pixel(x, y, px)[0] ?? 0;
 }
 
 interface Live {
@@ -315,7 +316,10 @@ export const mixerTool = makePaintTool({
   tip: () => ({ ...opts().mixer.tip, spacing: Math.min(0.1, opts().mixer.tip.spacing) }),
   flow: () => opts().mixer.flow,
   opacity: () => 1,
-  op: (t) => (t.channels === 4 ? smudgeOp(0.6 + opts().mixer.mix * 0.4, null, { wet: opts().mixer.wet, load: opts().mixer.load, mix: opts().mixer.mix, color: fg() }) : null),
+  op: (t) =>
+    t.channels === 4
+      ? smudgeOp(0.6 + opts().mixer.mix * 0.4, null, { wet: opts().mixer.wet, load: opts().mixer.load, mix: opts().mixer.mix, color: fg() })
+      : null,
 });
 
 export const colorReplaceTool = makePaintTool({
@@ -389,7 +393,8 @@ export const patternStampTool = makePaintTool({
   tip: () => opts().pattern.tip,
   flow: () => opts().pattern.flow,
   opacity: () => opts().pattern.opacity,
-  op: (t, e) => (t.channels === 4 ? patternOp(opts().pattern.pattern, 1, opts().pattern.aligned ? 0 : Math.round(e.x), opts().pattern.aligned ? 0 : Math.round(e.y)) : null),
+  op: (t, e) =>
+    t.channels === 4 ? patternOp(opts().pattern.pattern, 1, opts().pattern.aligned ? 0 : Math.round(e.x), opts().pattern.aligned ? 0 : Math.round(e.y)) : null,
 });
 
 /** The History Brush's source: the chosen snapshot (or the opening state) of the same raster. */
@@ -455,9 +460,10 @@ export const healTool = makePaintTool({
     const reg = intersect({ x: t.x - pad, y: t.y - pad, w: t.w + 2 * pad, h: t.h + 2 * pad }, canvasRect(s.doc));
     if (!reg) return [];
     const hole = emptyMask(s.doc.width, s.doc.height);
-    for (let y = reg.y; y < reg.y + reg.h; y++) for (let x = reg.x; x < reg.x + reg.w; x++) hole.data[y * s.doc.width + x] = Math.round(Math.min(1, l.stroke.coverage(x, y)) * 255);
+    for (let y = reg.y; y < reg.y + reg.h; y++)
+      for (let x = reg.x; x < reg.x + reg.w; x++) hole.data[y * s.doc.width + x] = Math.round(Math.min(1, l.stroke.coverage(x, y)) * 255);
     // Undo the plain copy, then heal from the original.
-    if (sw) for (const [k, tl] of sw.before) (tl ? sw.raster.tiles.set(k, tl) : sw.raster.tiles.delete(k));
+    if (sw) for (const [k, tl] of sw.before) tl ? sw.raster.tiles.set(k, tl) : sw.raster.tiles.delete(k);
     const src = h.read({ x: reg.x - h.dx, y: reg.y - h.dy, w: reg.w, h: reg.h });
     const healed = healWithSource(l.target.raster, hole, src, reg);
     // Fold both into one swap.
@@ -593,7 +599,12 @@ export const redEyeTool: Tool = {
     const b = redBox;
     redBox = null;
     if (!s || !t || !b || t.channels !== 4) return;
-    let r = { x: Math.floor(Math.min(b.x0, b.x1)), y: Math.floor(Math.min(b.y0, b.y1)), w: Math.ceil(Math.abs(b.x1 - b.x0)), h: Math.ceil(Math.abs(b.y1 - b.y0)) };
+    let r = {
+      x: Math.floor(Math.min(b.x0, b.x1)),
+      y: Math.floor(Math.min(b.y0, b.y1)),
+      w: Math.ceil(Math.abs(b.x1 - b.x0)),
+      h: Math.ceil(Math.abs(b.y1 - b.y0)),
+    };
     // A click: a box around the point, sized to a typical pupil.
     if (r.w < 4 || r.h < 4) {
       const sz = Math.max(12, Math.min(s.doc.width, s.doc.height) / 25);

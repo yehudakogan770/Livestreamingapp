@@ -1,6 +1,22 @@
 // Icons for the adjustment types (lucide where one fits, a few drawn here).
 
-export { Sun, ChartColumn as BarChart3, Spline, SquarePlus as PlusSquare, Triangle, Palette, Scale, Contrast, Funnel as Filter, Blend, Table2, SquareSlash, Layers2, Rainbow, Crosshair } from 'lucide-react';
+export {
+  Sun,
+  ChartColumn as BarChart3,
+  Spline,
+  SquarePlus as PlusSquare,
+  Triangle,
+  Palette,
+  Scale,
+  Contrast,
+  Funnel as Filter,
+  Blend,
+  Table2,
+  SquareSlash,
+  Layers2,
+  Rainbow,
+  Crosshair,
+} from 'lucide-react';
 
 /** Threshold: a square half black, half white. */
 export function SquareHalf({ size = 18 }: { size?: number }) {

@@ -167,8 +167,10 @@ export async function decodeDNG(bytes: Uint8Array): Promise<Decoded> {
         const i = (y * w + x) * spp + s;
         let v = d[i]!;
         if (lin.length) v = lin[Math.min(lin.length - 1, Math.max(0, Math.round(v)))]!;
-        const bl = blacks.length ? (blacks[((y % bh) * bw + (x % bw)) * (blacks.length >= bh * bw * spp ? spp : 1) + (blacks.length >= bh * bw * spp ? s : 0)] ?? blacks[0]!) : 0;
-        const wl = white[s] ?? white[0] ?? (2 ** plane.bps - 1);
+        const bl = blacks.length
+          ? (blacks[((y % bh) * bw + (x % bw)) * (blacks.length >= bh * bw * spp ? spp : 1) + (blacks.length >= bh * bw * spp ? s : 0)] ?? blacks[0]!)
+          : 0;
+        const wl = white[s] ?? white[0] ?? 2 ** plane.bps - 1;
         d[i] = Math.max(0, (v - bl) / Math.max(1, wl - bl));
       }
   // Active area.

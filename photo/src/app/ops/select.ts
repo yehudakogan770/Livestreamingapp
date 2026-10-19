@@ -74,7 +74,15 @@ export function modify(kind: 'border' | 'smooth' | 'expand' | 'contract' | 'feat
     return;
   }
   const m =
-    kind === 'border' ? borderMask(cur, amount) : kind === 'smooth' ? smoothMask(cur, amount) : kind === 'expand' ? growMask(cur, amount) : kind === 'contract' ? growMask(cur, -amount) : featherMask(cur, amount);
+    kind === 'border'
+      ? borderMask(cur, amount)
+      : kind === 'smooth'
+        ? smoothMask(cur, amount)
+        : kind === 'expand'
+          ? growMask(cur, amount)
+          : kind === 'contract'
+            ? growMask(cur, -amount)
+            : featherMask(cur, amount);
   const label = { border: 'Border', smooth: 'Smooth', expand: 'Expand', contract: 'Contract', feather: 'Feather' }[kind];
   change(label, 'select', (d) => withSelection(d, m));
 }
@@ -102,7 +110,13 @@ export function saveSelection(name?: string): void {
   const s = current();
   const cur = s ? selectionMask(s.doc) : null;
   if (!s || !cur) return;
-  const ch = { id: uid('c'), name: name ?? `Alpha ${s.doc.channels.length + 1}`, raster: maskToRaster(cur), visible: false, color: [1, 0, 0, 0.5] as [number, number, number, number] };
+  const ch = {
+    id: uid('c'),
+    name: name ?? `Alpha ${s.doc.channels.length + 1}`,
+    raster: maskToRaster(cur),
+    visible: false,
+    color: [1, 0, 0, 0.5] as [number, number, number, number],
+  };
   change('Save Selection', 'channel', (d) => ({ ...d, channels: [...d.channels, ch] }));
 }
 

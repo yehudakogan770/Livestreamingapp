@@ -203,7 +203,11 @@ export class Raster {
           let any = false;
           for (let y = sy0; y < sy1 && !any; y++) {
             let o = ((y - r.y) * r.w + (sx0 - r.x)) * c;
-            for (let i = 0; i < n; i++) if (src[o++] !== 0) { any = true; break; }
+            for (let i = 0; i < n; i++)
+              if (src[o++] !== 0) {
+                any = true;
+                break;
+              }
           }
           if (!any) continue;
         }

@@ -43,7 +43,14 @@ export async function transformDoc(d: Doc, mat: number[], w: number, h: number, 
       };
       out = await rerender({ ...out, text }, { ...d, width: w, height: h });
     } else if (out.kind === 'shape') {
-      out = await rerender({ ...out, path: transformPath(out.path, mat), stroke: out.stroke ? { ...out.stroke, width: out.stroke.width * Math.sqrt(Math.abs(mat[0]! * mat[3]!)) } : null }, { ...d, width: w, height: h });
+      out = await rerender(
+        {
+          ...out,
+          path: transformPath(out.path, mat),
+          stroke: out.stroke ? { ...out.stroke, width: out.stroke.width * Math.sqrt(Math.abs(mat[0]! * mat[3]!)) } : null,
+        },
+        { ...d, width: w, height: h },
+      );
     } else if (out.kind === 'smart') {
       const T = out.transform;
       const M = [mat[0]!, mat[2]!, mat[4]!, mat[1]!, mat[3]!, mat[5]!, 0, 0, 1];
@@ -104,7 +111,12 @@ export function transformRaster(r: Raster, mat: number[], method: Resample, chan
   ].map(([x, y]) => [a * x! + c * y! + e, bb * x! + d * y! + f]);
   const xs = corners.map((p) => p[0]!),
     ys = corners.map((p) => p[1]!);
-  const ob = { x: Math.floor(Math.min(...xs)), y: Math.floor(Math.min(...ys)), w: Math.ceil(Math.max(...xs)) - Math.floor(Math.min(...xs)), h: Math.ceil(Math.max(...ys)) - Math.floor(Math.min(...ys)) };
+  const ob = {
+    x: Math.floor(Math.min(...xs)),
+    y: Math.floor(Math.min(...ys)),
+    w: Math.ceil(Math.max(...xs)) - Math.floor(Math.min(...xs)),
+    h: Math.ceil(Math.max(...ys)) - Math.floor(Math.min(...ys)),
+  };
   const src = r.read(b);
   const det = a * d - bb * c;
   const ia = d / det,
@@ -160,7 +172,8 @@ function sampleBorder(a: Img, x: number, y: number, out: Float32Array): void {
     a01 = at(x0, y0 + 1, 3) * w01,
     a11 = at(x0 + 1, y0 + 1, 3) * w11;
   const al = a00 + a10 + a01 + a11;
-  for (let k = 0; k < 3; k++) out[k] = al > 1e-6 ? (at(x0, y0, k) * a00 + at(x0 + 1, y0, k) * a10 + at(x0, y0 + 1, k) * a01 + at(x0 + 1, y0 + 1, k) * a11) / al : 0;
+  for (let k = 0; k < 3; k++)
+    out[k] = al > 1e-6 ? (at(x0, y0, k) * a00 + at(x0 + 1, y0, k) * a10 + at(x0, y0 + 1, k) * a01 + at(x0 + 1, y0 + 1, k) * a11) / al : 0;
   out[3] = al;
 }
 
@@ -192,7 +205,11 @@ export function canvasSize(w: number, h: number, ax: number, ay: number, fill: [
     if (bgL.kind === 'pixel') {
       const ext = Raster.filled(d.depth, 4, { x: 0, y: 0, w, h }, fill);
       const old = bgL.raster.read({ x: dx, y: dy, w: d.width, h: d.height });
-      ext.write(intersect({ x: dx, y: dy, w: d.width, h: d.height }, { x: 0, y: 0, w, h }) ?? { x: 0, y: 0, w: 0, h: 0 }, cropF(old, d.width, d.height, dx, dy, w, h), null);
+      ext.write(
+        intersect({ x: dx, y: dy, w: d.width, h: d.height }, { x: 0, y: 0, w, h }) ?? { x: 0, y: 0, w: 0, h: 0 },
+        cropF(old, d.width, d.height, dx, dy, w, h),
+        null,
+      );
       layers[bgIdx] = { ...bgL, raster: ext };
     }
   }
@@ -207,7 +224,17 @@ export function canvasSize(w: number, h: number, ax: number, ay: number, fill: [
         if (X >= 0 && Y >= 0 && X < w && Y < h) nsel.data[Y * w + X] = sel.data[y * d.width + x]!;
       }
   }
-  const next = withSelection({ ...d, width: w, height: h, layers, channels: d.channels.map((c) => ({ ...c, raster: c.raster.shifted(dx, dy) })), guides: d.guides.map((g) => ({ ...g, at: g.at + (g.axis === 'x' ? dx : dy) })) }, nsel);
+  const next = withSelection(
+    {
+      ...d,
+      width: w,
+      height: h,
+      layers,
+      channels: d.channels.map((c) => ({ ...c, raster: c.raster.shifted(dx, dy) })),
+      guides: d.guides.map((g) => ({ ...g, at: g.at + (g.axis === 'x' ? dx : dy) })),
+    },
+    nsel,
+  );
   s.commit('Canvas Size', 'image', next);
   s.fitted = true;
   bump();
@@ -227,11 +254,20 @@ function shiftLayer(l: Layer, dx: number, dy: number): Layer {
   let out: Layer = mapRasters(l, (r) => r.shifted(dx, dy));
   if (out.kind === 'group') out = { ...out, children: out.children.map((c) => shiftLayer(c, dx, dy)) };
   const m = [1, 0, 0, 1, dx, dy];
-  if (out.kind === 'text') out = { ...out, raster: out.raster.shifted(dx, dy), text: { ...out.text, x: out.text.x + dx, y: out.text.y + dy, path: out.text.path ? transformPath(out.text.path, m) : undefined } };
+  if (out.kind === 'text')
+    out = {
+      ...out,
+      raster: out.raster.shifted(dx, dy),
+      text: { ...out.text, x: out.text.x + dx, y: out.text.y + dy, path: out.text.path ? transformPath(out.text.path, m) : undefined },
+    };
   if (out.kind === 'shape') out = { ...out, raster: out.raster.shifted(dx, dy), path: transformPath(out.path, m) };
   if (out.kind === 'smart') {
     const T = out.transform;
-    out = { ...out, raster: out.raster.shifted(dx, dy), transform: [T[0]! + dx * T[6]!, T[1]! + dx * T[7]!, T[2]! + dx * T[8]!, T[3]! + dy * T[6]!, T[4]! + dy * T[7]!, T[5]! + dy * T[8]!, T[6]!, T[7]!, T[8]!] };
+    out = {
+      ...out,
+      raster: out.raster.shifted(dx, dy),
+      transform: [T[0]! + dx * T[6]!, T[1]! + dx * T[7]!, T[2]! + dx * T[8]!, T[3]! + dy * T[6]!, T[4]! + dy * T[7]!, T[5]! + dy * T[8]!, T[6]!, T[7]!, T[8]!],
+    };
   }
   if (out.kind === 'fill' && out.content.type !== 'solid') out = { ...out, content: { ...out.content, ox: out.content.ox + dx, oy: out.content.oy + dy } };
   if (out.vmask) out = { ...out, vmask: { ...out.vmask, path: transformPath(out.vmask.path, m) } };
@@ -253,8 +289,15 @@ export async function rotateCanvas(deg: number): Promise<void> {
   const w = Math.round(Math.abs(C) * d.width + Math.abs(S) * d.height),
     h = Math.round(Math.abs(S) * d.width + Math.abs(C) * d.height);
   // Rotate about the old center, then move to the new center.
-  const mat = [C, S, -S, C, w / 2 - (C * d.width / 2 - S * d.height / 2), h / 2 - (S * d.width / 2 + C * d.height / 2)];
-  await transformDoc(d, mat, w, h, 'bicubic', deg === 180 ? 'Rotate 180°' : deg === 90 ? 'Rotate 90° Clockwise' : deg === -90 || deg === 270 ? 'Rotate 90° Counter Clockwise' : 'Rotate Canvas');
+  const mat = [C, S, -S, C, w / 2 - ((C * d.width) / 2 - (S * d.height) / 2), h / 2 - ((S * d.width) / 2 + (C * d.height) / 2)];
+  await transformDoc(
+    d,
+    mat,
+    w,
+    h,
+    'bicubic',
+    deg === 180 ? 'Rotate 180°' : deg === 90 ? 'Rotate 90° Clockwise' : deg === -90 || deg === 270 ? 'Rotate 90° Counter Clockwise' : 'Rotate Canvas',
+  );
   // Arbitrary angles leave transparent corners on the Background: fill them with the background color.
 }
 
@@ -299,7 +342,17 @@ export function cropTo(r: Rect, deleteCropped = true): void {
         if (X >= 0 && Y >= 0 && X < d.width && Y < d.height) nsel.data[yy * w + xx] = sel.data[Y * d.width + X]!;
       }
   }
-  const next = withSelection({ ...d, width: w, height: h, layers, channels: d.channels.map((c) => ({ ...c, raster: c.raster.shifted(-x, -y) })), guides: d.guides.map((g) => ({ ...g, at: g.at - (g.axis === 'x' ? x : y) })) }, nsel);
+  const next = withSelection(
+    {
+      ...d,
+      width: w,
+      height: h,
+      layers,
+      channels: d.channels.map((c) => ({ ...c, raster: c.raster.shifted(-x, -y) })),
+      guides: d.guides.map((g) => ({ ...g, at: g.at - (g.axis === 'x' ? x : y) })),
+    },
+    nsel,
+  );
   s.commit('Crop', 'crop', next);
   s.fitted = true;
   bump();
@@ -324,7 +377,12 @@ export function trim(based: 'transparent' | 'topLeft' | 'bottomRight'): void {
     H = s.doc.height;
   const ref = based === 'topLeft' ? 0 : (W * H - 1) * 4;
   const same = (i: number) =>
-    based === 'transparent' ? px[i * 4 + 3]! <= 0.002 : Math.abs(px[i * 4]! - px[ref]!) < 0.004 && Math.abs(px[i * 4 + 1]! - px[ref + 1]!) < 0.004 && Math.abs(px[i * 4 + 2]! - px[ref + 2]!) < 0.004 && Math.abs(px[i * 4 + 3]! - px[ref + 3]!) < 0.004;
+    based === 'transparent'
+      ? px[i * 4 + 3]! <= 0.002
+      : Math.abs(px[i * 4]! - px[ref]!) < 0.004 &&
+        Math.abs(px[i * 4 + 1]! - px[ref + 1]!) < 0.004 &&
+        Math.abs(px[i * 4 + 2]! - px[ref + 2]!) < 0.004 &&
+        Math.abs(px[i * 4 + 3]! - px[ref + 3]!) < 0.004;
   let x0 = W,
     y0 = H,
     x1 = -1,

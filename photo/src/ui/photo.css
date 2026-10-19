@@ -774,13 +774,27 @@
 .lp-layer-effects div {
   padding: 2px 0;
 }
-.lp-tag-red { box-shadow: inset 3px 0 0 #c9524a; }
-.lp-tag-orange { box-shadow: inset 3px 0 0 #d8873a; }
-.lp-tag-yellow { box-shadow: inset 3px 0 0 #cdb23c; }
-.lp-tag-green { box-shadow: inset 3px 0 0 #4e9a5c; }
-.lp-tag-blue { box-shadow: inset 3px 0 0 #4a7fc4; }
-.lp-tag-violet { box-shadow: inset 3px 0 0 #8a68c4; }
-.lp-tag-gray { box-shadow: inset 3px 0 0 #8a8a85; }
+.lp-tag-red {
+  box-shadow: inset 3px 0 0 #c9524a;
+}
+.lp-tag-orange {
+  box-shadow: inset 3px 0 0 #d8873a;
+}
+.lp-tag-yellow {
+  box-shadow: inset 3px 0 0 #cdb23c;
+}
+.lp-tag-green {
+  box-shadow: inset 3px 0 0 #4e9a5c;
+}
+.lp-tag-blue {
+  box-shadow: inset 3px 0 0 #4a7fc4;
+}
+.lp-tag-violet {
+  box-shadow: inset 3px 0 0 #8a68c4;
+}
+.lp-tag-gray {
+  box-shadow: inset 3px 0 0 #8a8a85;
+}
 
 /* Generic list rows (channels, paths, history, actions, comps) */
 .lp-row {

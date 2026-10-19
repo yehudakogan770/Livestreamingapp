@@ -40,12 +40,22 @@ function Field({ d, value, set }: { d: ParamDef; value: unknown; set: (v: unknow
           <div className="lp-slider">
             <label>{d.label}</label>
             <NumberField value={v} min={d.min} max={d.max} step={d.step ?? 1} digits={(d.step ?? 1) < 1 ? 1 : 0} suffix={d.unit} width={52} onChange={set} />
-            <input type="range" aria-label={d.label} min={lo} max={hi} step={0.001} value={Math.log(Math.max(d.min, v))} onChange={(e) => set(Math.round(Math.exp(parseFloat(e.target.value)) / (d.step ?? 1)) * (d.step ?? 1))} />
+            <input
+              type="range"
+              aria-label={d.label}
+              min={lo}
+              max={hi}
+              step={0.001}
+              value={Math.log(Math.max(d.min, v))}
+              onChange={(e) => set(Math.round(Math.exp(parseFloat(e.target.value)) / (d.step ?? 1)) * (d.step ?? 1))}
+            />
           </div>
         );
       }
       const step = d.step ?? 1;
-      return <Slider label={d.label} value={v} min={d.min} max={d.max} step={step} digits={step < 1 ? (step < 0.1 ? 2 : 1) : 0} suffix={d.unit} onChange={set} />;
+      return (
+        <Slider label={d.label} value={v} min={d.min} max={d.max} step={step} digits={step < 1 ? (step < 0.1 ? 2 : 1) : 0} suffix={d.unit} onChange={set} />
+      );
     }
     case 'angle':
       return <Slider label={d.label} value={typeof value === 'number' ? value : d.def} min={-180} max={180} suffix="°" onChange={set} />;
@@ -105,15 +115,21 @@ export function FilterDialog({ id, onClose }: { id: string; onClose: () => void 
     void run('filter.apply', { id, params, label: def.name });
   };
   return (
-    <Dialog title={def.name} onClose={onClose} width={360} modal={false} foot={
-      <>
-        <Check label="Preview" checked={preview} onChange={setPreview} />
-        <button className="lp-btn" onClick={() => setParams(defaults(def))}>
-          Reset
-        </button>
-        <OkCancel onOk={ok} onCancel={onClose} />
-      </>
-    }>
+    <Dialog
+      title={def.name}
+      onClose={onClose}
+      width={360}
+      modal={false}
+      foot={
+        <>
+          <Check label="Preview" checked={preview} onChange={setPreview} />
+          <button className="lp-btn" onClick={() => setParams(defaults(def))}>
+            Reset
+          </button>
+          <OkCancel onOk={ok} onCancel={onClose} />
+        </>
+      }
+    >
       {def.params.length ? (
         def.params.map((d) => (
           <div key={d.key} style={{ marginBottom: 8 }}>
@@ -142,12 +158,18 @@ export function AdjustPixelsDialog({ type, onClose }: { type: AdjustmentType; on
     void run('filter.apply', { id, params, label: ADJUSTMENT_NAMES[type] });
   };
   return (
-    <Dialog title={ADJUSTMENT_NAMES[type]} onClose={onClose} width={360} modal={false} foot={
-      <>
-        <Check label="Preview" checked={preview} onChange={setPreview} />
-        <OkCancel onOk={ok} onCancel={onClose} />
-      </>
-    }>
+    <Dialog
+      title={ADJUSTMENT_NAMES[type]}
+      onClose={onClose}
+      width={360}
+      modal={false}
+      foot={
+        <>
+          <Check label="Preview" checked={preview} onChange={setPreview} />
+          <OkCancel onOk={ok} onCancel={onClose} />
+        </>
+      }
+    >
       <AdjustEditor type={type} params={params} hist={hist} onChange={(p) => setParams(p)} />
     </Dialog>
   );

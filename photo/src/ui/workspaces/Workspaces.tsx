@@ -44,7 +44,21 @@ function drawImg(c: HTMLCanvasElement | null, im: Img, linear = false, trc = { t
   ctx.putImageData(out, 0, 0);
 }
 
-function Frame({ title, children, side, onOk, onCancel, ok = 'OK' }: { title: string; children: React.ReactNode; side: React.ReactNode; onOk: () => void; onCancel: () => void; ok?: string }) {
+function Frame({
+  title,
+  children,
+  side,
+  onOk,
+  onCancel,
+  ok = 'OK',
+}: {
+  title: string;
+  children: React.ReactNode;
+  side: React.ReactNode;
+  onOk: () => void;
+  onCancel: () => void;
+  ok?: string;
+}) {
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).tagName === 'INPUT') return;
@@ -107,7 +121,18 @@ function CameraRaw({ onClose }: { onClose: () => void }) {
     return () => clearTimeout(id);
   }, [p, before, src]);
   const set = (patch: Partial<DevelopParams>) => setP((cur) => ({ ...cur, ...patch }));
-  const sl = (label: string, k: keyof DevelopParams, min = -100, max = 100, step = 1) => <Slider key={k} label={label} value={p[k] as number} min={min} max={max} step={step} digits={step < 1 ? 2 : 0} onChange={(v) => set({ [k]: v } as Partial<DevelopParams>)} />;
+  const sl = (label: string, k: keyof DevelopParams, min = -100, max = 100, step = 1) => (
+    <Slider
+      key={k}
+      label={label}
+      value={p[k] as number}
+      min={min}
+      max={max}
+      step={step}
+      digits={step < 1 ? 2 : 0}
+      onChange={(v) => set({ [k]: v } as Partial<DevelopParams>)}
+    />
+  );
   const [hslTab, setHslTab] = useState<'h' | 's' | 'l'>('s');
   const ok = () => {
     onClose();
@@ -157,20 +182,47 @@ function CameraRaw({ onClose }: { onClose: () => void }) {
             />
           </div>
           {HSL_COLORS.map((c) => (
-            <Slider key={c} label={c[0]!.toUpperCase() + c.slice(1)} value={p.hsl[c][hslTab]} min={-100} max={100} onChange={(v) => set({ hsl: { ...p.hsl, [c]: { ...p.hsl[c], [hslTab]: v } } })} />
+            <Slider
+              key={c}
+              label={c[0]!.toUpperCase() + c.slice(1)}
+              value={p.hsl[c][hslTab]}
+              min={-100}
+              max={100}
+              onChange={(v) => set({ hsl: { ...p.hsl, [c]: { ...p.hsl[c], [hslTab]: v } } })}
+            />
           ))}
           <div className="lp-section-title">Color Grading</div>
           {(['shadows', 'midtones', 'highlights'] as const).map((t) => (
             <div key={t}>
-              <Slider label={`${t[0]!.toUpperCase() + t.slice(1)} Hue`} value={p.grade[t].hue} min={0} max={360} onChange={(v) => set({ grade: { ...p.grade, [t]: { ...p.grade[t], hue: v } } })} />
-              <Slider label={`${t[0]!.toUpperCase() + t.slice(1)} Saturation`} value={p.grade[t].sat} min={0} max={100} onChange={(v) => set({ grade: { ...p.grade, [t]: { ...p.grade[t], sat: v } } })} />
+              <Slider
+                label={`${t[0]!.toUpperCase() + t.slice(1)} Hue`}
+                value={p.grade[t].hue}
+                min={0}
+                max={360}
+                onChange={(v) => set({ grade: { ...p.grade, [t]: { ...p.grade[t], hue: v } } })}
+              />
+              <Slider
+                label={`${t[0]!.toUpperCase() + t.slice(1)} Saturation`}
+                value={p.grade[t].sat}
+                min={0}
+                max={100}
+                onChange={(v) => set({ grade: { ...p.grade, [t]: { ...p.grade[t], sat: v } } })}
+              />
             </div>
           ))}
           <Slider label="Blending" value={p.grade.blending} min={0} max={100} onChange={(v) => set({ grade: { ...p.grade, blending: v } })} />
           <Slider label="Balance" value={p.grade.balance} min={-100} max={100} onChange={(v) => set({ grade: { ...p.grade, balance: v } })} />
           <div className="lp-section-title">Detail</div>
           <Slider label="Sharpening" value={p.sharpen.amount} min={0} max={150} onChange={(v) => set({ sharpen: { ...p.sharpen, amount: v } })} />
-          <Slider label="Radius" value={p.sharpen.radius} min={0.5} max={3} step={0.1} digits={1} onChange={(v) => set({ sharpen: { ...p.sharpen, radius: v } })} />
+          <Slider
+            label="Radius"
+            value={p.sharpen.radius}
+            min={0.5}
+            max={3}
+            step={0.1}
+            digits={1}
+            onChange={(v) => set({ sharpen: { ...p.sharpen, radius: v } })}
+          />
           <Slider label="Masking" value={p.sharpen.masking} min={0} max={100} onChange={(v) => set({ sharpen: { ...p.sharpen, masking: v } })} />
           <Slider label="Noise Reduction" value={p.noise.luminance} min={0} max={100} onChange={(v) => set({ noise: { ...p.noise, luminance: v } })} />
           <Slider label="Color Noise Reduction" value={p.noise.color} min={0} max={100} onChange={(v) => set({ noise: { ...p.noise, color: v } })} />
@@ -221,7 +273,8 @@ function SelectAndMask({ onClose, maskLayer }: { onClose: () => void; maskLayer:
     const mw = small.img.w,
       mh = small.img.h;
     const sm = new Uint8Array(mw * mh);
-    for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) sm[y * mw + x] = m.data[Math.min(src.h - 1, Math.floor(y / k)) * src.w + Math.min(src.w - 1, Math.floor(x / k))]!;
+    for (let y = 0; y < mh; y++)
+      for (let x = 0; x < mw; x++) sm[y * mw + x] = m.data[Math.min(src.h - 1, Math.floor(y / k)) * src.w + Math.min(src.w - 1, Math.floor(x / k))]!;
     return { src, m, small: small.img, smallMask: { w: mw, h: mh, data: sm }, k };
   }, [s, maskLayer]);
   useEffect(() => {
@@ -239,8 +292,14 @@ function SelectAndMask({ onClose, maskLayer }: { onClose: () => void; maskLayer:
         if (view === 'bw') c = [a, a, a];
         else if (view === 'black') c = [r * a, g * a, b * a];
         else if (view === 'white') c = [r * a + 1 - a, g * a + 1 - a, b * a + 1 - a];
-        else if (view === 'overlay') c = [r * a + (r * 0.5 + 0.5) * (1 - a) * (1 - opacity) + opacity * (1 - a), g * a + g * (1 - a) * (1 - opacity), b * a + b * (1 - a) * (1 - opacity)];
-        else c = [r * a + (r * (1 - opacity) + 0.8 * opacity) * (1 - a), g * a + (g * (1 - opacity) + 0.8 * opacity) * (1 - a), b * a + (b * (1 - opacity) + 0.8 * opacity) * (1 - a)];
+        else if (view === 'overlay')
+          c = [r * a + (r * 0.5 + 0.5) * (1 - a) * (1 - opacity) + opacity * (1 - a), g * a + g * (1 - a) * (1 - opacity), b * a + b * (1 - a) * (1 - opacity)];
+        else
+          c = [
+            r * a + (r * (1 - opacity) + 0.8 * opacity) * (1 - a),
+            g * a + (g * (1 - opacity) + 0.8 * opacity) * (1 - a),
+            b * a + (b * (1 - opacity) + 0.8 * opacity) * (1 - a),
+          ];
         out.data.set([c[0], c[1], c[2], 1], i * 4);
       }
       drawImg(canvas.current, out);
@@ -257,7 +316,8 @@ function SelectAndMask({ onClose, maskLayer }: { onClose: () => void; maskLayer:
     const l = s.activeLayer();
     if (!l) return;
     const mask = { raster: maskToRaster(m), background: 0, enabled: true, linked: true, density: 1, feather: 0 };
-    if (output === 'mask' || output === 'layerMask') change('Select and Mask', 'mask', (d) => withSelection({ ...d, layers: updateLayer(d.layers, l.id, (x) => ({ ...x, mask })) }, null));
+    if (output === 'mask' || output === 'layerMask')
+      change('Select and Mask', 'mask', (d) => withSelection({ ...d, layers: updateLayer(d.layers, l.id, (x) => ({ ...x, mask })) }, null));
     bump();
   };
   const set = (k: keyof typeof o, v: number) => setO({ ...o, [k]: v });
@@ -285,7 +345,9 @@ function SelectAndMask({ onClose, maskLayer }: { onClose: () => void; maskLayer:
               onChange={setView}
             />
           </div>
-          {(view === 'onion' || view === 'overlay') && <Slider label="Opacity" value={opacity} min={0} max={1} step={0.01} scale={100} suffix="%" onChange={setOpacity} />}
+          {(view === 'onion' || view === 'overlay') && (
+            <Slider label="Opacity" value={opacity} min={0} max={1} step={0.01} scale={100} suffix="%" onChange={setOpacity} />
+          )}
           <div className="lp-section-title">Edge Detection</div>
           <Slider label="Radius" value={o.radius} min={0} max={250} suffix="px" onChange={(v) => set('radius', v)} />
           <div className="lp-note">A radius lets soft edges like hair follow the picture.</div>

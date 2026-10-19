@@ -200,7 +200,8 @@ export function sampleBilinear(a: Img, x: number, y: number, out: number[] | Flo
       a01 = data[p01 + 3]! * (1 - fx) * fy,
       a11 = data[p11 + 3]! * fx * fy;
     const al = a00 + a10 + a01 + a11;
-    for (let ch = 0; ch < 3; ch++) out[o + ch] = al > 1e-6 ? (data[p00 + ch]! * a00 + data[p10 + ch]! * a10 + data[p01 + ch]! * a01 + data[p11 + ch]! * a11) / al : 0;
+    for (let ch = 0; ch < 3; ch++)
+      out[o + ch] = al > 1e-6 ? (data[p00 + ch]! * a00 + data[p10 + ch]! * a10 + data[p01 + ch]! * a01 + data[p11 + ch]! * a11) / al : 0;
     out[o + 3] = al;
   } else {
     out[o] = data[p00]! * (1 - fx) * (1 - fy) + data[p10]! * fx * (1 - fy) + data[p01]! * (1 - fx) * fy + data[p11]! * fx * fy;
@@ -314,7 +315,8 @@ export function resize(a: Img, w: number, h: number, method: Resample = 'bicubic
 /** Luminance (Rec. 709 weights) as a 1-channel image. */
 export function luminance(a: Img): Img {
   const out = img(a.w, a.h, 1);
-  for (let i = 0, j = 0; j < out.data.length; i += a.c, j++) out.data[j] = a.c === 1 ? a.data[i]! : 0.2126 * a.data[i]! + 0.7152 * a.data[i + 1]! + 0.0722 * a.data[i + 2]!;
+  for (let i = 0, j = 0; j < out.data.length; i += a.c, j++)
+    out.data[j] = a.c === 1 ? a.data[i]! : 0.2126 * a.data[i]! + 0.7152 * a.data[i + 1]! + 0.0722 * a.data[i + 2]!;
   return out;
 }
 

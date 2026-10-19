@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { X, Sun, Moon } from 'lucide-react';
-import { app, useApp, setCurrent, current, toast, requestFrame } from '../app/state';
+import { app, useApp, setCurrent, current, toast, requestFrame, setTool } from '../app/state';
 import { handleShortcut } from '../app/commands';
 import { toolFor } from '../app/tools';
 import { MenuBar } from './MenuBar';
@@ -17,7 +17,7 @@ import { Workspaces } from './workspaces/Workspaces';
 import { closeDoc, registerCommands } from './registerCommands';
 import { zoomLabel } from '../app/viewMath';
 import { openPicked } from '../app/files';
-import { toolDef } from '../app/toolDefs';
+import { toolDef, TOOL_GROUPS } from '../app/toolDefs';
 import { NumberField } from './fields';
 import { actualPixels } from '../app/tools/viewTools';
 import { viewport } from '../app/tools/types';
@@ -27,8 +27,31 @@ registerCommands();
 
 // For the end-to-end checks (e2e/photo-smoke.mjs): a few handles on ?debug.
 if (typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug'))
-  void Promise.all([import('../app/ops/common'), import('../core/composite'), import('../app/commands'), import('../app/files'), import('../core/io/psd'), import('../core/layers')]).then(([common, comp, cmds, files, psd, layers]) => {
-    (window as unknown as Record<string, unknown>).__photo = { app, current, flatten: common.flatten, compositeRect: comp.compositeRect, run: cmds.run, openPicked: files.openPicked, writePSD: psd.writePSD, allLayers: layers.allLayers };
+  void Promise.all([
+    import('../app/ops/common'),
+    import('../core/composite'),
+    import('../app/commands'),
+    import('../app/files'),
+    import('../core/io/psd'),
+    import('../core/layers'),
+    import('../core/io/lumphoto'),
+  ]).then(([common, comp, cmds, files, psd, layers, lp]) => {
+    (window as unknown as Record<string, unknown>).__photo = {
+      app,
+      current,
+      flatten: common.flatten,
+      compositeRect: comp.compositeRect,
+      run: cmds.run,
+      openPicked: files.openPicked,
+      writePSD: psd.writePSD,
+      allLayers: layers.allLayers,
+      writeLumphoto: lp.writeLumphoto,
+      readLumphoto: lp.readLumphoto,
+      setTool,
+      tools: TOOL_GROUPS.flat()
+        .filter((t) => !t.hidden)
+        .map((t) => t.id),
+    };
   });
 
 function isTyping(t: EventTarget | null): boolean {
@@ -47,7 +70,15 @@ function DocTabs() {
       {sessions.map((s) => {
         const l = s.activeLayer();
         return (
-          <div key={s.id} className="lp-tab" role="tab" aria-selected={s.id === cur} onClick={() => setCurrent(s.id)} onAuxClick={(e) => e.button === 1 && void closeDoc(s.id)} title={s.path ?? s.doc.name}>
+          <div
+            key={s.id}
+            className="lp-tab"
+            role="tab"
+            aria-selected={s.id === cur}
+            onClick={() => setCurrent(s.id)}
+            onAuxClick={(e) => e.button === 1 && void closeDoc(s.id)}
+            title={s.path ?? s.doc.name}
+          >
             <span className="lp-tab-name">
               {s.doc.name} @ {zoomLabel(s.view.zoom)} ({l ? `${l.name}, ` : ''}RGB/{s.doc.depth}){s.unsaved ? ' *' : ''}
             </span>
@@ -78,7 +109,16 @@ function StatusBar() {
   if (!s) return <div className="lp-status" />;
   return (
     <div className="lp-status">
-      <NumberField value={Math.round(s.view.zoom * 1000) / 10} min={1} max={6400} digits={s.view.zoom < 0.1 ? 2 : 1} suffix="%" width={58} title="Zoom" onChange={(v) => actualPixels(v / 100)} />
+      <NumberField
+        value={Math.round(s.view.zoom * 1000) / 10}
+        min={1}
+        max={6400}
+        digits={s.view.zoom < 0.1 ? 2 : 1}
+        suffix="%"
+        width={58}
+        title="Zoom"
+        onChange={(v) => actualPixels(v / 100)}
+      />
       <span>
         {s.doc.width} × {s.doc.height} px ({Math.round(s.doc.resolution)} ppi)
       </span>
@@ -229,7 +269,12 @@ export function App() {
     >
       <MenuBar
         right={
-          <button className="lp-icon-btn" title={theme === 'dark' ? 'Light interface' : 'Dark interface'} aria-label="Switch interface theme" onClick={() => app.set({ theme: theme === 'dark' ? 'light' : 'dark' })}>
+          <button
+            className="lp-icon-btn"
+            title={theme === 'dark' ? 'Light interface' : 'Dark interface'}
+            aria-label="Switch interface theme"
+            onClick={() => app.set({ theme: theme === 'dark' ? 'light' : 'dark' })}
+          >
             {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
           </button>
         }

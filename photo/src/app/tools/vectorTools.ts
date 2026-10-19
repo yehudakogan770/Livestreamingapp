@@ -4,7 +4,20 @@
 // Line, Custom Shape) making shape layers, paths or pixels.
 
 import { app, current, requestFrame, bump, toast } from '../state';
-import { clonePath, corner, ellipsePath, flatten, hitAnchor, linePath, polygonPath, rectPath, smoothPath, transformPath, type Anchor, type VectorPath } from '../../core/path';
+import {
+  clonePath,
+  corner,
+  ellipsePath,
+  flatten,
+  hitAnchor,
+  linePath,
+  polygonPath,
+  rectPath,
+  smoothPath,
+  transformPath,
+  type Anchor,
+  type VectorPath,
+} from '../../core/path';
 import { CUSTOM_SHAPES, parseSvgPath } from '../../core/svgPath';
 import { baseLayer, findLayer, insertLayers, nextName, uid, updateLayer } from '../../core/layers';
 import { Raster, TileEdit } from '../../core/raster';
@@ -57,7 +70,8 @@ function storePath(p: VectorPath, label: string | null): void {
   if (!s || !t) return;
   let next = s.doc;
   if (t.kind === 'path') next = { ...next, paths: next.paths.map((x) => (x.id === t.id ? { ...x, path: p } : x)) };
-  else if (t.kind === 'shape') next = { ...next, layers: updateLayer(next.layers, t.id, (l) => (l.kind === 'shape' ? rerenderSync({ ...l, path: p }, s.doc) : l)) };
+  else if (t.kind === 'shape')
+    next = { ...next, layers: updateLayer(next.layers, t.id, (l) => (l.kind === 'shape' ? rerenderSync({ ...l, path: p }, s.doc) : l)) };
   else next = { ...next, layers: updateLayer(next.layers, t.id, (l) => (l.vmask ? { ...l, vmask: { ...l.vmask, path: p } } : l)) };
   if (label) s.commit(label, 'path', next);
   else s.doc = next;
@@ -490,7 +504,8 @@ function selectTool(id: 'pathSelect' | 'directSelect'): Tool {
       const h = hitAnchor(p, e.x, e.y, r);
       if (id === 'directSelect' && h) {
         const pick = { s: h.s, a: h.a };
-        if (e.shift) selected = selected.some((x) => x.s === pick.s && x.a === pick.a) ? selected.filter((x) => !(x.s === pick.s && x.a === pick.a)) : [...selected, pick];
+        if (e.shift)
+          selected = selected.some((x) => x.s === pick.s && x.a === pick.a) ? selected.filter((x) => !(x.s === pick.s && x.a === pick.a)) : [...selected, pick];
         else if (!selected.some((x) => x.s === pick.s && x.a === pick.a)) selected = [pick];
         sdrag = { x0: e.x, y0: e.y, base: clonePath(p), part: h.part, picks: h.part === 'anchor' ? selected : [pick] };
         requestFrame();
@@ -584,8 +599,24 @@ export function makeShape(path: VectorPath, label: string): void {
     return;
   }
   const fill = o.fill ? ([...o.fill, 1] as [number, number, number, number]) : null;
-  const stroke = o.stroke ? { color: [...o.stroke, 1] as [number, number, number, number], width: o.strokeWidth, align: 'inside' as const, cap: 'butt' as const, join: 'miter' as const, dash: [] } : null;
-  const layer: ShapeLayer = { ...baseLayer(nextName(s.doc, label.replace(/ Tool$/, ''))), kind: 'shape', path, fillColor: fill, stroke, raster: new Raster(s.doc.depth, 4) };
+  const stroke = o.stroke
+    ? {
+        color: [...o.stroke, 1] as [number, number, number, number],
+        width: o.strokeWidth,
+        align: 'inside' as const,
+        cap: 'butt' as const,
+        join: 'miter' as const,
+        dash: [],
+      }
+    : null;
+  const layer: ShapeLayer = {
+    ...baseLayer(nextName(s.doc, label.replace(/ Tool$/, ''))),
+    kind: 'shape',
+    path,
+    fillColor: fill,
+    stroke,
+    raster: new Raster(s.doc.depth, 4),
+  };
   layer.raster = renderShapeRaster(layer, s.doc);
   if (o.mode === 'pixels') {
     const t = paintTarget();

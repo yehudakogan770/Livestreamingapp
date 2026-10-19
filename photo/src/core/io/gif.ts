@@ -72,7 +72,12 @@ export function medianCut(rgba: Uint8Array, n: number): number[][] {
     }
     const a = order.slice(0, cut),
       c2 = order.slice(cut);
-    boxes = [...boxes.slice(0, bi), { colors: Uint32Array.from(a, (i) => b.colors[i]!), counts: Uint32Array.from(a, (i) => b.counts[i]!) }, { colors: Uint32Array.from(c2, (i) => b.colors[i]!), counts: Uint32Array.from(c2, (i) => b.counts[i]!) }, ...boxes.slice(bi + 1)];
+    boxes = [
+      ...boxes.slice(0, bi),
+      { colors: Uint32Array.from(a, (i) => b.colors[i]!), counts: Uint32Array.from(a, (i) => b.counts[i]!) },
+      { colors: Uint32Array.from(c2, (i) => b.colors[i]!), counts: Uint32Array.from(c2, (i) => b.counts[i]!) },
+      ...boxes.slice(bi + 1),
+    ];
   }
   return boxes.map((b) => {
     let r = 0,
@@ -217,7 +222,12 @@ export function encodeGIF(width: number, height: number, rgba: Uint8Array, color
       }
     }
   const w = new Writer(width * height + 2048, true);
-  w.ascii('GIF89a').u16(width).u16(height).u8(0x80 | ((bits - 1) << 4) | (bits - 1)).u8(0).u8(0);
+  w.ascii('GIF89a')
+    .u16(width)
+    .u16(height)
+    .u8(0x80 | ((bits - 1) << 4) | (bits - 1))
+    .u8(0)
+    .u8(0);
   for (let i = 0; i < size; i++) {
     const p = pal[i] ?? [0, 0, 0];
     w.u8(p[0]!).u8(p[1]!).u8(p[2]!);

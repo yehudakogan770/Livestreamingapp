@@ -169,7 +169,7 @@ export const DISTORT_FILTERS: FilterDef[] = [
         return true;
       });
     },
-    reach: (p) => Math.ceil(Math.abs(num(p, 'amount', 100)) / 100 * 3) + 2,
+    reach: (p) => Math.ceil((Math.abs(num(p, 'amount', 100)) / 100) * 3) + 2,
     dialog: true,
     smart: true,
   },
@@ -376,7 +376,8 @@ function lensCorrect(a: Img, p: Record<string, unknown>, c: FilterContext): Img 
       if (vig) {
         const t = Math.max(0, (r - mid * 0.7) / (1 - mid * 0.7));
         const v = vig * t * t;
-        for (let ch = 0; ch < 3; ch++) out.data[o + ch] = Math.min(1, Math.max(0, vig > 0 ? out.data[o + ch]! + (1 - out.data[o + ch]!) * v : out.data[o + ch]! * (1 + v)));
+        for (let ch = 0; ch < 3; ch++)
+          out.data[o + ch] = Math.min(1, Math.max(0, vig > 0 ? out.data[o + ch]! + (1 - out.data[o + ch]!) * v : out.data[o + ch]! * (1 + v)));
       }
     }
   return out;

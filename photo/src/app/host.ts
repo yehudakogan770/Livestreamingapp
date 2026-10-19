@@ -19,7 +19,12 @@ export interface Host {
   kind: 'web' | 'desktop';
   openFiles(filters: FileFilter[], multiple: boolean): Promise<PickedFile[]>;
   /** Save bytes; `target` re-saves to a known place. Returns where it went (null: cancelled). */
-  saveFile(name: string, bytes: Uint8Array, filters: FileFilter[], target?: { path?: string | null; handle?: FileSystemFileHandle | null }): Promise<{ path?: string; handle?: FileSystemFileHandle; name: string } | null>;
+  saveFile(
+    name: string,
+    bytes: Uint8Array,
+    filters: FileFilter[],
+    target?: { path?: string | null; handle?: FileSystemFileHandle | null },
+  ): Promise<{ path?: string; handle?: FileSystemFileHandle; name: string } | null>;
   /** Read a file by desktop path (recent files). */
   readPath?(path: string): Promise<Uint8Array>;
   /** Save into the shared Lumora folders (Send to Lumora / Titler / Studio). */

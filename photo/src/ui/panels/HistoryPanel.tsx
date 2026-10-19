@@ -21,15 +21,21 @@ export function HistoryPanel() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div ref={list} style={{ flex: 1, overflow: 'auto' }} role="listbox" aria-label="History">
         {h.snapshots.map((snap, i) => (
-          <div key={snap.id} className="lp-row" role="option" aria-selected={false} onClick={() => {
-            if (i === 0 && h.dropped === 0) {
-              goToStep(0);
-              return;
-            }
-            const st = h.restore(snap, { ...s.doc });
-            s.restore(st);
-            bump();
-          }}>
+          <div
+            key={snap.id}
+            className="lp-row"
+            role="option"
+            aria-selected={false}
+            onClick={() => {
+              if (i === 0 && h.dropped === 0) {
+                goToStep(0);
+                return;
+              }
+              const st = h.restore(snap, { ...s.doc });
+              s.restore(st);
+              bump();
+            }}
+          >
             <button
               className="lp-icon-btn"
               style={{ width: 20, height: 20 }}
@@ -56,7 +62,13 @@ export function HistoryPanel() {
           const n = i + 1;
           const cur = n === h.index;
           return (
-            <div key={st.id} className={`lp-row${cur ? ' lp-sel lp-current' : ''}${n > h.index ? ' lp-future' : ''}`} onClick={() => goToStep(n)} role="option" aria-selected={cur}>
+            <div
+              key={st.id}
+              className={`lp-row${cur ? ' lp-sel lp-current' : ''}${n > h.index ? ' lp-future' : ''}`}
+              onClick={() => goToStep(n)}
+              role="option"
+              aria-selected={cur}
+            >
               <span style={{ width: 20 }} />
               <span className="lp-grow">{st.label}</span>
             </div>

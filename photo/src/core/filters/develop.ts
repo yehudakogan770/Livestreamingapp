@@ -31,7 +31,13 @@ export interface DevelopParams {
   saturation: number;
   curve: CurvePoints;
   hsl: Record<HslColor, { h: number; s: number; l: number }>;
-  grade: { shadows: { hue: number; sat: number; lum: number }; midtones: { hue: number; sat: number; lum: number }; highlights: { hue: number; sat: number; lum: number }; blending: number; balance: number };
+  grade: {
+    shadows: { hue: number; sat: number; lum: number };
+    midtones: { hue: number; sat: number; lum: number };
+    highlights: { hue: number; sat: number; lum: number };
+    blending: number;
+    balance: number;
+  };
   sharpen: { amount: number; radius: number; detail: number; masking: number };
   noise: { luminance: number; detail: number; color: number };
   lens: { distortion: number; vignetting: number; defringe: number };
@@ -240,7 +246,10 @@ export function develop(a: Img, p: DevelopParams, ctx: { width: number; height: 
       Cb[i] = d[i * 4 + 2]! - Y[i]!;
       Cr[i] = d[i * 4]! - Y[i]!;
     }
-    const Ys = p.noise.luminance > 0 ? guided(Y, Y, w, h, Math.round(1 + p.noise.luminance / 25), (0.0002 + p.noise.luminance * 0.00006) * (1.5 - p.noise.detail / 100)) : Y;
+    const Ys =
+      p.noise.luminance > 0
+        ? guided(Y, Y, w, h, Math.round(1 + p.noise.luminance / 25), (0.0002 + p.noise.luminance * 0.00006) * (1.5 - p.noise.detail / 100))
+        : Y;
     const Cbs = p.noise.color > 0 ? guided(Ys, Cb, w, h, Math.round(2 + p.noise.color / 10), 0.001 + p.noise.color * 0.0004) : Cb;
     const Crs = p.noise.color > 0 ? guided(Ys, Cr, w, h, Math.round(2 + p.noise.color / 10), 0.001 + p.noise.color * 0.0004) : Cr;
     for (let i = 0; i < n; i++) {
