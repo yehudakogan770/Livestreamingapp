@@ -196,8 +196,6 @@ export function registerCommands(): void {
     { id: 'edit.stroke', label: 'Stroke…', run: () => openDialog('stroke'), enabled: pixelLayer },
     { id: 'edit.contentAwareFill', label: 'Content-Aware Fill', run: () => void import('../app/ops/heal').then((m) => m.contentAwareFill()), enabled: () => selection() && pixelLayer(), record: true },
     { id: 'edit.contentAwareScale', label: 'Content-Aware Scale…', keys: 'Ctrl+Alt+Shift+C', run: () => openDialog('contentAwareScale'), enabled: pixelLayer },
-    { id: 'edit.puppetWarp', label: 'Puppet Warp', run: () => app.set({ workspace: { kind: 'puppet' } }), enabled: pixelLayer },
-    { id: 'edit.perspectiveWarp', label: 'Perspective Warp', run: () => app.set({ workspace: { kind: 'perspectiveWarp' } }), enabled: pixelLayer },
     { id: 'edit.freeTransform', label: 'Free Transform', keys: 'Ctrl+T', run: () => freeTransform('free'), enabled: layer },
     { id: 'edit.warp', label: 'Warp', run: () => freeTransform('warp'), enabled: layer },
     { id: 'edit.again', label: 'Transform Again', keys: 'Ctrl+Shift+T', run: () => freeTransform('free'), enabled: layer },

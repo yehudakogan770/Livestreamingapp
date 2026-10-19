@@ -64,8 +64,6 @@ export const MENUS: Menu[] = [
       'edit.contentAwareFill',
       '-',
       'edit.contentAwareScale',
-      'edit.puppetWarp',
-      'edit.perspectiveWarp',
       'edit.freeTransform',
       { label: 'Transform', items: ['edit.again', '-', 'edit.warp', '-', 'edit.rot180', 'edit.rot90cw', 'edit.rot90ccw', '-', 'edit.flipH', 'edit.flipV'] },
       '-',
